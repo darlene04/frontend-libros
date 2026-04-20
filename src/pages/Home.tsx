@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   BookOpen,
+  BookMarked,
   ArrowLeftRight,
   MessageCircle,
   MapPin,
@@ -12,6 +13,7 @@ import {
   Sun,
   Sunset,
   Moon,
+  Star,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -19,58 +21,72 @@ import {
   TRANSACTIONS,
   CONVERSATIONS,
   MY_BOOKS,
+  STATS_DATA,
 } from "@/data/mock";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConditionBadge, ModeBadge } from "@/components/shared/Badge";
 import StarRating from "@/components/shared/StarRating";
 import type { Book } from "@/types";
 
-const FEATURED_BOOKS  = BOOKS.filter((b) => b.isFeatured);
-const RECENT_BOOKS    = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
-const PENDING_COUNT   = TRANSACTIONS.filter((t) => t.status === "pending").length;
-const UNREAD_MESSAGES = CONVERSATIONS.reduce((sum, c) => sum + c.unreadCount, 0);
+const FEATURED_BOOKS   = BOOKS.filter((b) => b.isFeatured);
+const RECENT_BOOKS     = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
+const PENDING_COUNT    = TRANSACTIONS.filter((t) => t.status === "pending").length;
+const MONTHLY_REVENUE  = STATS_DATA[STATS_DATA.length - 1].revenue;
+const MONTHLY_LABEL    = new Intl.DateTimeFormat("es-PE", { month: "long" }).format(new Date());
+const PREV_REVENUE     = STATS_DATA[STATS_DATA.length - 2].revenue;
+const REVENUE_DELTA    = Math.round(((MONTHLY_REVENUE - PREV_REVENUE) / PREV_REVENUE) * 100);
 
-const getKPIs = (firstName: string) => [
+type User = import("@/types").User;
+
+const getKPIs = (user: User | null) => [
   {
-    label:    "Libros disponibles",
-    value:    BOOKS.length.toString(),
-    sub:      "en toda la plataforma",
-    icon:     BookOpen,
-    iconBg:   "bg-violet-50",
-    iconColor:"text-violet-600",
-    trend:    "+12 esta semana",
-    trendUp:  true,
+    label:     "Libros listados",
+    value:     MY_BOOKS.length.toString(),
+    sub:       `de ${BOOKS.length} en plataforma`,
+    icon:      BookMarked,
+    iconBg:    "bg-violet-100",
+    iconColor: "text-violet-700",
+    cardBg:    "bg-gradient-to-br from-white to-violet-50/60",
+    trend:     "+1 este mes",
+    trendUp:   true,
+    href:      "/mis-libros",
   },
   {
-    label:    "Intercambios activos",
-    value:    PENDING_COUNT.toString(),
-    sub:      PENDING_COUNT === 1 ? "solicitud pendiente" : "solicitudes pendientes",
-    icon:     ArrowLeftRight,
-    iconBg:   "bg-blue-50",
-    iconColor:"text-blue-600",
-    trend:    "Requiere atención",
-    trendUp:  null,
+    label:     "Intercambios activos",
+    value:     PENDING_COUNT.toString(),
+    sub:       PENDING_COUNT === 1 ? "solicitud pendiente" : "solicitudes pendientes",
+    icon:      ArrowLeftRight,
+    iconBg:    "bg-blue-100",
+    iconColor: "text-blue-700",
+    cardBg:    "bg-gradient-to-br from-white to-blue-50/60",
+    trend:     "Ver solicitudes",
+    trendUp:   false,
+    href:      "/intercambios",
   },
   {
-    label:    "Mensajes sin leer",
-    value:    UNREAD_MESSAGES.toString(),
-    sub:      UNREAD_MESSAGES === 1 ? "conversación nueva" : "conversaciones nuevas",
-    icon:     MessageCircle,
-    iconBg:   "bg-emerald-50",
-    iconColor:"text-emerald-600",
-    trend:    "De 2 contactos",
-    trendUp:  null,
+    label:     "Ventas del mes",
+    value:     `$${MONTHLY_REVENUE}`,
+    sub:       `S/ · ${MONTHLY_LABEL}`,
+    icon:      TrendingUp,
+    iconBg:    "bg-emerald-100",
+    iconColor: "text-emerald-700",
+    cardBg:    "bg-gradient-to-br from-white to-emerald-50/60",
+    trend:     `+${REVENUE_DELTA}% vs mes anterior`,
+    trendUp:   REVENUE_DELTA > 0,
+    href:      undefined,
   },
   {
-    label:    "Mis libros publicados",
-    value:    MY_BOOKS.length.toString(),
-    sub:      `activos como ${firstName}`,
-    icon:     TrendingUp,
-    iconBg:   "bg-amber-50",
-    iconColor:"text-amber-600",
-    trend:    "Ver mis libros",
-    trendUp:  null,
-    href:     "/mis-libros",
+    label:     "Rating promedio",
+    value:     user?.rating.toFixed(1) ?? "—",
+    sub:       `${user?.reviewCount ?? 0} reseñas recibidas`,
+    icon:      Star,
+    iconBg:    "bg-amber-100",
+    iconColor: "text-amber-700",
+    cardBg:    "bg-gradient-to-br from-white to-amber-50/60",
+    trend:     "Ver reseñas",
+    trendUp:   false,
+    href:      "/perfil",
+    rating:    user?.rating,
   },
 ];
 
@@ -104,7 +120,7 @@ function getGreeting() {
 export default function Home() {
   const user      = useAuthStore((s) => s.user);
   const firstName = user?.name.split(" ")[0] ?? "Lector";
-  const kpis      = getKPIs(firstName);
+  const kpis      = getKPIs(user);
 
   const greeting = getGreeting();
   const GreetIcon = greeting.icon;
@@ -247,46 +263,65 @@ interface KPICardProps {
   icon:      React.ElementType;
   iconBg:    string;
   iconColor: string;
+  cardBg:    string;
   trend:     string;
-  trendUp:   boolean | null;
+  trendUp:   boolean;
   href?:     string;
+  rating?:   number;
 }
 
-function KPICard({ label, value, sub, icon: Icon, iconBg, iconColor, trend, trendUp, href }: KPICardProps) {
+function KPICard({ label, value, sub, icon: Icon, iconBg, iconColor, cardBg, trend, trendUp, href, rating }: KPICardProps) {
   const inner = (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-white p-4 flex flex-col gap-3",
-        "transition-all duration-150",
-        href && "hover:shadow-md hover:border-border/80 cursor-pointer"
+        "relative overflow-hidden rounded-2xl border border-border p-5 flex flex-col gap-4",
+        "transition-all duration-200",
+        cardBg,
+        href && "hover:shadow-lg hover:shadow-black/[0.06] hover:-translate-y-0.5 cursor-pointer"
       )}
     >
+      {/* Top row */}
       <div className="flex items-start justify-between">
-        <span className={cn("w-9 h-9 rounded-xl flex items-center justify-center", iconBg)}>
-          <Icon className={cn("w-4 h-4", iconColor)} />
+        <span className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center ring-1 ring-black/[0.06]",
+          iconBg
+        )}>
+          <Icon className={cn("w-[18px] h-[18px]", iconColor)} />
         </span>
-        {trendUp === true && (
-          <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full">
+
+        {trendUp && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border text-emerald-700 bg-emerald-50 border-emerald-100">
+            <TrendingUp className="w-2.5 h-2.5" />
             {trend}
           </span>
         )}
       </div>
 
-      <div>
-        <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{sub}</p>
+      {/* Metric */}
+      <div className="space-y-1">
+        <p className="text-[30px] leading-none font-bold tracking-tight text-foreground">
+          {value}
+        </p>
+        {rating != null && (
+          <StarRating value={rating} size="sm" className="mt-1.5" />
+        )}
+        <p className="text-xs text-muted-foreground leading-snug">{sub}</p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-medium text-muted-foreground/80">{label}</p>
-        {trendUp === null && (
-          <p className="text-[10px] text-muted-foreground/60">{trend}</p>
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-1 mt-auto border-t border-black/[0.05]">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        {!trendUp && (
+          <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/70">
+            {trend}
+            {href && <ArrowRight className="w-3 h-3" />}
+          </span>
         )}
       </div>
     </div>
   );
 
-  if (href) return <Link to={href}>{inner}</Link>;
+  if (href) return <Link to={href} className="block">{inner}</Link>;
   return inner;
 }
 
@@ -358,8 +393,8 @@ function BookCard({ book }: { book: Book }) {
         <div className="flex items-center justify-between">
           {book.price != null ? (
             <span className="text-sm font-bold text-foreground">
-              ${book.price}
-              <span className="text-[10px] font-normal text-muted-foreground ml-0.5">MXN</span>
+              S/ {book.price}
+              <span className="text-[10px] font-normal text-muted-foreground ml-0.5">PEN</span>
             </span>
           ) : (
             <span className="text-xs font-medium text-violet-600">Gratis</span>
