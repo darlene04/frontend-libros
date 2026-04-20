@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -28,8 +29,22 @@ import { ConditionBadge, ModeBadge } from "@/components/shared/Badge";
 import StarRating from "@/components/shared/StarRating";
 import type { Book } from "@/types";
 
+const ALL_BOOKS_SORTED = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 const FEATURED_BOOKS   = BOOKS.filter((b) => b.isFeatured);
-const RECENT_BOOKS     = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
+const RECENT_BOOKS     = ALL_BOOKS_SORTED.slice(0, 6);
+
+const FILTER_GENRES = [
+  "Todos",
+  "Ficción",
+  "Ciencia ficción",
+  "Fantasía",
+  "Historia",
+  "Autoayuda",
+  "Infantil",
+  "Romance",
+  "Terror",
+  "Biografía",
+];
 const PENDING_COUNT    = TRANSACTIONS.filter((t) => t.status === "pending").length;
 const MONTHLY_REVENUE  = STATS_DATA[STATS_DATA.length - 1].revenue;
 const MONTHLY_LABEL    = new Intl.DateTimeFormat("es-PE", { month: "long" }).format(new Date());
@@ -125,6 +140,16 @@ export default function Home() {
   const greeting = getGreeting();
   const GreetIcon = greeting.icon;
 
+  const [selectedGenre, setSelectedGenre] = useState("Todos");
+
+  const filteredBooks = selectedGenre === "Todos"
+    ? FEATURED_BOOKS
+    : BOOKS.filter((b) => b.genre === selectedGenre);
+
+  const filteredRecent = selectedGenre === "Todos"
+    ? RECENT_BOOKS
+    : ALL_BOOKS_SORTED.filter((b) => b.genre === selectedGenre).slice(0, 6);
+
   return (
     <div className="max-w-6xl mx-auto space-y-10">
 
@@ -216,19 +241,70 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Genre filter ──────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-widest">
+            Explorar por género
+          </p>
+          {selectedGenre !== "Todos" && (
+            <button
+              onClick={() => setSelectedGenre("Todos")}
+              className="text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors"
+            >
+              Limpiar filtro
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+          {FILTER_GENRES.map((genre) => (
+            <GenrePill
+              key={genre}
+              label={genre}
+              selected={selectedGenre === genre}
+              onClick={() => setSelectedGenre(genre)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ── Featured / filtered books ──────────────────────────────────────── */}
       <section className="space-y-4">
         <SectionHeader
-          title="Destacados"
-          subtitle="Libros seleccionados para ti"
+          title={selectedGenre === "Todos" ? "Destacados" : selectedGenre}
+          subtitle={
+            selectedGenre === "Todos"
+              ? "Libros seleccionados para ti"
+              : `${filteredBooks.length} libro${filteredBooks.length !== 1 ? "s" : ""} disponible${filteredBooks.length !== 1 ? "s" : ""}`
+          }
           icon={Flame}
           href="/explorar"
           cta="Ver todos"
         />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {FEATURED_BOOKS.map((book) => (
-            <BookCard key={book.id} book={book} />
-          ))}
-        </div>
+        {filteredBooks.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredBooks.map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-14 gap-3 rounded-2xl border border-dashed border-border bg-muted/30">
+            <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-violet-400" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium text-foreground">Sin libros en este género</p>
+              <p className="text-xs text-muted-foreground">Aún no hay libros de <span className="font-medium">{selectedGenre}</span> disponibles.</p>
+            </div>
+            <button
+              onClick={() => setSelectedGenre("Todos")}
+              className="text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors mt-1"
+            >
+              Ver todos los géneros
+            </button>
+          </div>
+        )}
       </section>
 
       <div className="border-t border-border/60" />
@@ -241,7 +317,7 @@ export default function Home() {
           cta="Ver más"
         />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {RECENT_BOOKS.map((book) => (
+          {filteredRecent.map((book) => (
             <BookCardCompact key={book.id} book={book} />
           ))}
         </div>
@@ -255,6 +331,33 @@ export default function Home() {
     </div>
   );
 }
+
+// ─── Genre pill ───────────────────────────────────────────────────────────────
+
+interface GenrePillProps {
+  label:    string;
+  selected: boolean;
+  onClick:  () => void;
+}
+
+function GenrePill({ label, selected, onClick }: GenrePillProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex-shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium",
+        "border transition-all duration-150 whitespace-nowrap",
+        selected
+          ? "bg-violet-600 border-violet-600 text-white shadow-sm shadow-violet-200"
+          : "bg-white border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/50"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 interface KPICardProps {
   label:     string;
