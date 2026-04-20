@@ -50,7 +50,7 @@ export default function AuthLayout() {
       </main>
       <footer className="relative z-10 py-5 text-center border-t border-border/40">
         <p className="text-xs text-muted-foreground/60">
-          © 2025 Booker &middot;{" "}
+          © 2026 Booker &middot;{" "}
           <a
             href="#"
             className="hover:text-muted-foreground transition-colors underline underline-offset-2"
