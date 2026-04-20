@@ -15,6 +15,15 @@ function PlaceholderPage({ title }: { title: string }) {
   );
 }
 
+const protectedAppRoutes = [
+  { path: "/explorar", element: <Home /> },
+  { path: "/mis-libros", element: <PlaceholderPage title="Mis libros" /> },
+  { path: "/intercambios", element: <PlaceholderPage title="Intercambios" /> },
+  { path: "/mensajes", element: <PlaceholderPage title="Mensajes" /> },
+  { path: "/perfil", element: <PlaceholderPage title="Perfil" /> },
+  { path: "/configuracion", element: <PlaceholderPage title="Configuración" /> },
+];
+
 export default function App() {
   return (
     <Routes>
@@ -27,15 +36,12 @@ export default function App() {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* Protected — AppLayout + ProtectedRoute como doble wrapper */}
+      {/* ProtectedRoute -> AppLayout -> page */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/explorar"      element={<Home />} />
-          <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
-          <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
-          <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
-          <Route path="/perfil"        element={<PlaceholderPage title="Perfil" />} />
-          <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
+          {protectedAppRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
+          ))}
         </Route>
       </Route>
 

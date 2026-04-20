@@ -4,7 +4,6 @@ import {
   BookOpen,
   BookMarked,
   ArrowLeftRight,
-  MessageCircle,
   MapPin,
   Plus,
   TrendingUp,
@@ -20,7 +19,6 @@ import { useAuthStore } from "@/store/useAuthStore";
 import {
   BOOKS,
   TRANSACTIONS,
-  CONVERSATIONS,
   MY_BOOKS,
   STATS_DATA,
 } from "@/data/mock";
@@ -31,7 +29,11 @@ import type { Book } from "@/types";
 
 const ALL_BOOKS_SORTED = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 const FEATURED_BOOKS   = BOOKS.filter((b) => b.isFeatured);
-const RECENT_BOOKS     = ALL_BOOKS_SORTED.slice(0, 6);
+const RECENT_BOOKS     = ALL_BOOKS_SORTED.slice(0, 8);
+const SHOWCASE_BOOKS   = [
+  ...FEATURED_BOOKS,
+  ...BOOKS.filter((b) => !b.isFeatured),
+].slice(0, 6);
 
 const FILTER_GENRES = [
   "Todos",
@@ -80,7 +82,7 @@ const getKPIs = (user: User | null) => [
   },
   {
     label:     "Ventas del mes",
-    value:     `$${MONTHLY_REVENUE}`,
+    value:     `S/ ${MONTHLY_REVENUE}`,
     sub:       `S/ · ${MONTHLY_LABEL}`,
     icon:      TrendingUp,
     iconBg:    "bg-emerald-100",
@@ -143,18 +145,18 @@ export default function Home() {
   const [selectedGenre, setSelectedGenre] = useState("Todos");
 
   const filteredBooks = selectedGenre === "Todos"
-    ? FEATURED_BOOKS
+    ? SHOWCASE_BOOKS
     : BOOKS.filter((b) => b.genre === selectedGenre);
 
   const filteredRecent = selectedGenre === "Todos"
     ? RECENT_BOOKS
-    : ALL_BOOKS_SORTED.filter((b) => b.genre === selectedGenre).slice(0, 6);
+    : ALL_BOOKS_SORTED.filter((b) => b.genre === selectedGenre).slice(0, 8);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10">
+    <div className="max-w-6xl mx-auto space-y-8 pb-6 lg:space-y-10">
 
       {/* Welcome hero */}
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-white px-6 py-8 sm:px-10 sm:py-10">
+      <section className="relative overflow-hidden rounded-[28px] border border-border/80 bg-gradient-to-br from-white via-white to-violet-50/40 px-5 py-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.25)] sm:px-8 sm:py-8 lg:px-10 lg:py-9">
         {/* Blobs */}
         <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-violet-100/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-purple-100/30 blur-3xl" />
@@ -167,21 +169,23 @@ export default function Home() {
           }}
         />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div className="relative flex flex-col gap-7 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch">
           {/* Left */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Chip */}
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50/90 px-2.5 py-1 text-[11px] font-semibold text-violet-700 shadow-sm shadow-violet-100/40">
               <GreetIcon className="w-3 h-3" />
               {greeting.chip}
             </span>
 
             {/* Heading */}
-            <div className="space-y-0.5">
-              <p className="text-sm font-medium text-muted-foreground">
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-muted-foreground/90">
                 {greeting.saludo},
               </p>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
+              <h1 className="max-w-2xl text-3xl font-bold tracking-tight leading-[1.05] sm:text-4xl lg:text-[42px]">
+                Un panel hecho para
+                {" "}
                 <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
                   {firstName}.
                 </span>
@@ -189,19 +193,19 @@ export default function Home() {
             </div>
 
             {/* Tagline */}
-            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
               {greeting.tagline}
             </p>
 
             {/* Pills + CTA */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
               {user?.location && (
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted border border-border/60 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-white/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur-sm">
                   <MapPin className="w-3 h-3 flex-shrink-0" />
                   {user.location}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted border border-border/60 px-2.5 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-white/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur-sm">
                 <BookOpen className="w-3 h-3 flex-shrink-0" />
                 {BOOKS.length} libros disponibles
               </span>
@@ -210,7 +214,7 @@ export default function Home() {
                 to="/mis-libros/nuevo"
                 className={cn(
                   "inline-flex items-center gap-1.5",
-                  "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-1.5",
+                  "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2",
                   "text-xs font-semibold text-white shadow-sm shadow-violet-200",
                   "hover:from-violet-700 hover:to-purple-700 transition-all duration-150 active:scale-95"
                 )}
@@ -219,22 +223,53 @@ export default function Home() {
                 Publicar libro
               </Link>
             </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:max-w-xl sm:grid-cols-3">
+              <HeroStat label="Tu catálogo" value={MY_BOOKS.length.toString()} />
+              <HeroStat label="Solicitudes activas" value={PENDING_COUNT.toString()} />
+              <HeroStat label="Ingresos del mes" value={`S/ ${MONTHLY_REVENUE}`} />
+            </div>
           </div>
 
           {/* Right — mini stat accent */}
-          <div className="hidden lg:flex flex-col items-end gap-2 flex-shrink-0 self-center">
-            <div className="flex flex-col items-center justify-center w-24 h-24 rounded-2xl bg-violet-50 border border-violet-100 gap-1">
-              <span className="text-3xl font-bold text-violet-600">{BOOKS.length}</span>
-              <span className="text-[10px] text-violet-500 font-medium text-center leading-tight">libros<br/>disponibles</span>
+          <div className="relative hidden rounded-[24px] border border-violet-100/80 bg-white/75 p-5 shadow-[0_18px_40px_-30px_rgba(124,58,237,0.4)] backdrop-blur-sm lg:flex lg:flex-col lg:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-500/80">
+                  Actividad
+                </p>
+                <p className="text-2xl font-bold tracking-tight text-foreground">
+                  {BOOKS.length} libros
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Descubre títulos nuevos, coordina intercambios y mantiene tu biblioteca en movimiento.
+                </p>
+              </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/60 text-right max-w-[96px] leading-snug">
-              Actualizado hoy
-            </p>
+
+            <div className="rounded-2xl border border-border/70 bg-muted/40 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+                Estado de hoy
+              </p>
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-3xl font-bold leading-none text-violet-600">{BOOKS.length}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">libros visibles ahora</p>
+                </div>
+                <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                  Actualizado
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
       <section>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
           {kpis.map((kpi) => (
             <KPICard key={kpi.label} {...kpi} />
           ))}
@@ -242,15 +277,20 @@ export default function Home() {
       </section>
 
       {/* ── Genre filter ──────────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-widest">
-            Explorar por género
-          </p>
+      <section className="space-y-3 rounded-[24px] border border-border/70 bg-white px-4 py-4 shadow-[0_14px_34px_-30px_rgba(15,23,42,0.3)] sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+              Explorar por género
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Ajusta la selección destacada según lo que quieras leer hoy.
+            </p>
+          </div>
           {selectedGenre !== "Todos" && (
             <button
               onClick={() => setSelectedGenre("Todos")}
-              className="text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors"
+              className="rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-600 transition-colors hover:text-violet-700"
             >
               Limpiar filtro
             </button>
@@ -270,7 +310,7 @@ export default function Home() {
       </section>
 
       {/* ── Featured / filtered books ──────────────────────────────────────── */}
-      <section className="space-y-4">
+      <section className="space-y-4 rounded-[28px] border border-border/70 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.28)] sm:p-5 lg:p-6">
         <SectionHeader
           title={selectedGenre === "Todos" ? "Destacados" : selectedGenre}
           subtitle={
@@ -283,13 +323,13 @@ export default function Home() {
           cta="Ver todos"
         />
         {filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             {filteredBooks.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-14 gap-3 rounded-2xl border border-dashed border-border bg-muted/30">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 py-14">
             <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-violet-400" />
             </div>
@@ -307,27 +347,44 @@ export default function Home() {
         )}
       </section>
 
-      <div className="border-t border-border/60" />
-      <section className="space-y-4">
+      {/* ── Recent books ──────────────────────────────────────────────────── */}
+      <section className="space-y-4 rounded-[28px] border border-border/70 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.28)] sm:p-5 lg:p-6">
         <SectionHeader
-          title="Publicados recientemente"
+          title="Recién publicados"
           subtitle="Los últimos en llegar a la plataforma"
           icon={Clock}
           href="/explorar"
           cta="Ver más"
         />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {filteredRecent.map((book) => (
-            <BookCardCompact key={book.id} book={book} />
-          ))}
-        </div>
+
+        {filteredRecent.length > 0 ? (
+          <div className="overflow-hidden rounded-2xl border border-border/80 bg-muted/[0.22]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/60">
+              {/* Split list into two columns on lg */}
+              {[filteredRecent.slice(0, Math.ceil(filteredRecent.length / 2)), filteredRecent.slice(Math.ceil(filteredRecent.length / 2))].map((col, ci) => (
+                <div key={ci} className="divide-y divide-border/50">
+                  {col.map((book, i) => (
+                    <BookListItem
+                      key={book.id}
+                      book={book}
+                      index={ci * Math.ceil(filteredRecent.length / 2) + i}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl border border-dashed border-border bg-muted/30">
+            <BookOpen className="w-8 h-8 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">Sin publicaciones recientes en este género.</p>
+          </div>
+        )}
       </section>
 
-      <div className="border-t border-border/60" />
       <section>
         <CTABanner userName={firstName} />
       </section>
-      <div className="h-4" />
     </div>
   );
 }
@@ -345,11 +402,10 @@ function GenrePill({ label, selected, onClick }: GenrePillProps) {
     <button
       onClick={onClick}
       className={cn(
-        "flex-shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium",
-        "border transition-all duration-150 whitespace-nowrap",
+        "flex-shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-150",
         selected
-          ? "bg-violet-600 border-violet-600 text-white shadow-sm shadow-violet-200"
-          : "bg-white border-border text-muted-foreground hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/50"
+          ? "border-violet-600 bg-violet-600 text-white shadow-sm shadow-violet-200"
+          : "bg-white text-muted-foreground hover:border-violet-300 hover:bg-violet-50/50 hover:text-violet-700"
       )}
     >
       {label}
@@ -377,16 +433,16 @@ function KPICard({ label, value, sub, icon: Icon, iconBg, iconColor, cardBg, tre
   const inner = (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border p-5 flex flex-col gap-4",
-        "transition-all duration-200",
+        "relative flex h-full flex-col gap-4 overflow-hidden rounded-[22px] border border-border/80 p-5",
+        "shadow-[0_14px_30px_-28px_rgba(15,23,42,0.35)] transition-all duration-200",
         cardBg,
-        href && "hover:shadow-lg hover:shadow-black/[0.06] hover:-translate-y-0.5 cursor-pointer"
+        href && "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_24px_40px_-30px_rgba(15,23,42,0.35)]"
       )}
     >
       {/* Top row */}
       <div className="flex items-start justify-between">
         <span className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center ring-1 ring-black/[0.06]",
+          "flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-black/[0.06]",
           iconBg
         )}>
           <Icon className={cn("w-[18px] h-[18px]", iconColor)} />
@@ -401,8 +457,8 @@ function KPICard({ label, value, sub, icon: Icon, iconBg, iconColor, cardBg, tre
       </div>
 
       {/* Metric */}
-      <div className="space-y-1">
-        <p className="text-[30px] leading-none font-bold tracking-tight text-foreground">
+      <div className="space-y-1.5">
+        <p className="text-[28px] font-bold leading-none tracking-tight text-foreground sm:text-[30px]">
           {value}
         </p>
         {rating != null && (
@@ -412,7 +468,7 @@ function KPICard({ label, value, sub, icon: Icon, iconBg, iconColor, cardBg, tre
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-1 mt-auto border-t border-black/[0.05]">
+      <div className="mt-auto flex items-center justify-between border-t border-black/[0.05] pt-2">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {!trendUp && (
           <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/70">
@@ -439,18 +495,18 @@ interface SectionHeaderProps {
 function SectionHeader({ title, subtitle, icon: Icon, href, cta }: SectionHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <div className="flex items-center gap-2.5">
-        <span className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-violet-50 ring-1 ring-violet-100/80">
           <Icon className="w-3.5 h-3.5 text-violet-600" />
         </span>
-        <div>
-          <h2 className="text-base font-semibold text-foreground leading-tight">{title}</h2>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        <div className="space-y-0.5">
+          <h2 className="text-lg font-semibold leading-tight text-foreground">{title}</h2>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
       </div>
       <Link
         to={href}
-        className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors flex-shrink-0 mt-1"
+        className="mt-1 inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-violet-600 transition-colors hover:bg-violet-50 hover:text-violet-700"
       >
         {cta}
         <ArrowRight className="w-3 h-3" />
@@ -461,101 +517,141 @@ function SectionHeader({ title, subtitle, icon: Icon, href, cta }: SectionHeader
 
 function BookCard({ book }: { book: Book }) {
   return (
-    <div className="group rounded-2xl border border-border bg-white overflow-hidden hover:shadow-md hover:border-border/80 transition-all duration-200 flex flex-col">
-      {/* Cover */}
-      <div className="relative overflow-hidden bg-muted aspect-[2/3]">
+    <Link
+      to={`/libro/${book.id}`}
+      className="group relative block overflow-hidden rounded-[20px] border border-border/80 bg-muted shadow-[0_12px_28px_-24px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-xl hover:shadow-black/15"
+    >
+      {/* Cover — full bleed */}
+      <div className="relative aspect-[4/5] overflow-hidden">
         <img
           src={book.cover}
           alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
         />
-        <div className="absolute top-2 left-2">
+
+        {/* Top badges */}
+        <div className="absolute left-2 top-2 flex gap-1">
           <ModeBadge mode={book.mode} size="sm" />
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-col gap-2 p-3 flex-1">
-        <div>
-          <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">{book.title}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{book.author}</p>
-        </div>
-
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <ConditionBadge condition={book.condition} size="sm" />
-        </div>
-
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-auto">
-          <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-          <span className="truncate">{book.location}</span>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-3 pb-3">
-        <div className="flex items-center justify-between">
-          {book.price != null ? (
-            <span className="text-sm font-bold text-foreground">
-              S/ {book.price}
-              <span className="text-[10px] font-normal text-muted-foreground ml-0.5">PEN</span>
+          {book.isFeatured && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/90 text-amber-950 backdrop-blur-sm">
+              <Flame className="w-2.5 h-2.5" />
+              Destacado
             </span>
-          ) : (
-            <span className="text-xs font-medium text-violet-600">Gratis</span>
           )}
-          <Link
-            to={`/libro/${book.id}`}
-            className="text-[11px] font-medium text-violet-600 hover:text-violet-700 transition-colors"
-          >
-            Ver más
-          </Link>
+        </div>
+
+        {/* Bottom gradient */}
+        <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+
+        {/* Content overlay */}
+        <div className="absolute inset-x-0 bottom-0 space-y-1.5 p-3 sm:p-3.5">
+          {/* Title + author */}
+          <div>
+            <p className="text-white font-semibold text-[13px] leading-snug line-clamp-2 drop-shadow">
+              {book.title}
+            </p>
+            <p className="text-white/65 text-[11px] mt-0.5 truncate">{book.author}</p>
+          </div>
+
+          {/* Footer row */}
+          <div className="flex items-center justify-between">
+            <ConditionBadge condition={book.condition} size="sm" />
+            {book.price != null ? (
+              <span className="text-white font-bold text-[13px] drop-shadow">
+                S/ {book.price}
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold text-white/90 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                Gratis
+              </span>
+            )}
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center gap-1 text-[10px] text-white/50">
+            <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+            <span className="truncate">{book.location}</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
-function BookCardCompact({ book }: { book: Book }) {
+function BookListItem({ book, index }: { book: Book; index: number }) {
   return (
-    <div className="group flex flex-col gap-2">
+    <Link
+      to={`/libro/${book.id}`}
+      className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-violet-50/40"
+    >
+      {/* Rank */}
+      <span className="w-4 text-right text-xs font-mono text-muted-foreground/30 flex-shrink-0 select-none">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+
       {/* Cover */}
-      <div className="relative rounded-xl overflow-hidden bg-muted aspect-[2/3] border border-border">
+      <div className="relative h-[54px] w-10 flex-shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-border/80">
         <img
           src={book.cover}
           alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
-        <div className="absolute top-1.5 left-1.5">
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="text-sm font-semibold text-foreground leading-tight truncate group-hover:text-violet-700 transition-colors">
+          {book.title}
+        </p>
+        <p className="text-xs text-muted-foreground truncate">{book.author}</p>
+        <div className="flex items-center gap-1.5">
           <ModeBadge mode={book.mode} size="sm" />
+          <ConditionBadge condition={book.condition} size="sm" />
         </div>
       </div>
-      {/* Title */}
-      <div>
-        <p className="text-[11px] font-semibold text-foreground leading-snug line-clamp-2">{book.title}</p>
-        <p className="text-[10px] text-muted-foreground truncate mt-0.5">{book.author}</p>
-        <p className="text-[10px] text-muted-foreground/60 mt-0.5">{formatRelativeTime(book.createdAt)}</p>
+
+      {/* Right */}
+      <div className="flex flex-shrink-0 flex-col items-end gap-1">
+        {book.price != null ? (
+          <span className="text-xs font-bold text-foreground tabular-nums">S/ {book.price}</span>
+        ) : (
+          <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 px-1.5 py-0.5 rounded-full">
+            Gratis
+          </span>
+        )}
+        <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
+          {formatRelativeTime(book.createdAt)}
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
 
 function CTABanner({ userName }: { userName: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 p-6 sm:p-8">
-      <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
+    <div className="relative overflow-hidden rounded-[28px] border border-violet-500/20 bg-gradient-to-br from-violet-600 via-violet-600 to-purple-700 p-6 shadow-[0_24px_50px_-28px_rgba(124,58,237,0.6)] sm:p-8">
+      <div className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-purple-500/20 blur-2xl" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.08]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      />
 
-      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <p className="text-white/70 text-sm font-medium">Para ti, {userName}</p>
-          <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+      <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+        <div className="space-y-2.5">
+          <p className="text-sm font-medium text-white/70">Para ti, {userName}</p>
+          <h3 className="text-xl font-bold leading-tight text-white sm:text-2xl">
             Tu colección merece<br className="hidden sm:block" /> nuevos lectores
           </h3>
-          <p className="text-white/70 text-sm max-w-sm leading-relaxed">
+          <p className="max-w-sm text-sm leading-relaxed text-white/70">
             Publica tus libros en menos de 2 minutos y conecta con lectores cerca de ti.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-shrink-0">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
           <StarRating value={4.8} showValue size="sm" className="text-white/80" />
           <Link
             to="/mis-libros/nuevo"
@@ -570,6 +666,19 @@ function CTABanner({ userName }: { userName: string }) {
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-white/75 px-3.5 py-3 backdrop-blur-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+        {value}
+      </p>
     </div>
   );
 }

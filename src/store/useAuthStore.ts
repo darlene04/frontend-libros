@@ -11,6 +11,22 @@ interface AuthState {
   logout: () => void;
 }
 
+const LEGACY_LOCATION_MAP: Record<string, string> = {
+  "Madrid, España": "Lima, Perú",
+  "Barcelona, España": "Arequipa, Perú",
+  "Sevilla, España": "Cusco, Perú",
+  "Valencia, España": "Trujillo, Perú",
+};
+
+function normalizeUser(user: User | null): User | null {
+  if (!user) return null;
+
+  return {
+    ...user,
+    location: LEGACY_LOCATION_MAP[user.location] ?? user.location,
+  };
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -18,10 +34,10 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: (user = CURRENT_USER) =>
-        set({ user, isAuthenticated: true }),
+        set({ user: normalizeUser(user), isAuthenticated: true }),
 
       setUser: (user) =>
-        set({ user, isAuthenticated: true }),
+        set({ user: normalizeUser(user), isAuthenticated: true }),
 
       logout: () =>
         set({ user: null, isAuthenticated: false }),
@@ -32,6 +48,15 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      merge: (persistedState, currentState) => {
+        const typedState = persistedState as Partial<AuthState> | undefined;
+
+        return {
+          ...currentState,
+          ...typedState,
+          user: normalizeUser(typedState?.user ?? currentState.user),
+        };
+      },
     }
   )
 );

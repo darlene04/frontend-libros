@@ -403,7 +403,7 @@ function Step2({ data, errors, onChange, clearError, onBack, onSubmit }: Step2Pr
       <Field label="Ciudad o región" error={errors.location}>
         <input
           type="text"
-          placeholder="Madrid, España"
+          placeholder="Lima, Perú"
           autoComplete="address-level2"
           value={data.location}
           onChange={(e) => { onChange({ location: e.target.value }); clearError("location"); }}
