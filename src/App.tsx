@@ -30,6 +30,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
+          <Route path="/marketplace"   element={<PlaceholderPage title="Marketplace" />} />
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
           <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
           <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
