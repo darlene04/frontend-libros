@@ -10,7 +10,6 @@ import {
   Users,
   ThumbsUp,
   Globe,
-  Sparkles,
 } from "lucide-react";
 
 // ─── Static data ──────────────────────────────────────────────────────────────
