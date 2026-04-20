@@ -3,7 +3,7 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import AuthLayout from "@/layouts/AuthLayout";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/layouts/ProtectedRoute";
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -25,15 +25,10 @@ export default function App() {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* Protected */}
-      <Route
-        path="/explorar"
-        element={
-          <ProtectedRoute>
-            <PlaceholderPage title="Explorar" />
-          </ProtectedRoute>
-        }
-      />
+      {/* Protected — add routes here as children */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/explorar" element={<PlaceholderPage title="Explorar" />} />
+      </Route>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

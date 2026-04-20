@@ -69,8 +69,8 @@ export const USERS: User[] = [
   },
   {
     id: "u4",
-    name: "Darlene Mendez",
-    email: "darlene.mendez@mail.com",
+    name: "Darlene Escobar",
+    email: "darlene.escobar@mail.com",
     avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=darlene",
     location: "Valencia, España",
     bio: "Lectora voraz. Me gustan los thrillers, la fantasía épica y el manga.",
