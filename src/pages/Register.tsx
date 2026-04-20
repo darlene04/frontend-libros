@@ -1,7 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BookOpen,
   Eye,
   EyeOff,
   Check,
@@ -142,32 +141,8 @@ export default function Register() {
   const strength = getStrength(data.password);
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Ambient */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute top-0 -left-32 w-[400px] h-[400px] bg-violet-200/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 -right-32 w-[400px] h-[400px] bg-purple-200/20 rounded-full blur-3xl" />
-      </div>
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.22]"
-        aria-hidden
-        style={{
-          backgroundImage: "radial-gradient(circle, #a78bfa 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-
-      <div className="relative w-full max-w-[480px]">
-        {/* Logo */}
-        <Link to="/" className="flex items-center justify-center gap-2.5 font-bold text-xl mb-8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-200">
-            <BookOpen className="w-[18px] h-[18px] text-white" />
-          </div>
-          Booker
-        </Link>
-
-        {/* Card */}
-        <div className="bg-white border border-border rounded-2xl shadow-xl shadow-black/[0.06] overflow-hidden">
+    <>
+      <div className="bg-white border border-border rounded-2xl shadow-xl shadow-black/[0.06] overflow-hidden">
           {/* Progress header */}
           <div className="px-8 pt-8 pb-6 border-b border-border">
             <Stepper current={step} labels={STEP_LABELS} />
@@ -222,18 +197,17 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Sign in link */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          ¿Ya tienes cuenta?{" "}
-          <Link
-            to="/login"
-            className="text-violet-600 hover:text-violet-700 font-semibold transition-colors"
-          >
-            Inicia sesión
-          </Link>
-        </p>
-      </div>
-    </div>
+      {/* Sign in link */}
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        ¿Ya tienes cuenta?{" "}
+        <Link
+          to="/login"
+          className="text-violet-600 hover:text-violet-700 font-semibold transition-colors"
+        >
+          Inicia sesión
+        </Link>
+      </p>
+    </>
   );
 }
 

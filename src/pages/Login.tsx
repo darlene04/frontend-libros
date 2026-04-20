@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { BookOpen, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -104,38 +104,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center px-4 relative overflow-hidden">
-      {/* Ambient blobs */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute top-0 -left-32 w-[400px] h-[400px] bg-violet-200/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 -right-32 w-[400px] h-[400px] bg-purple-200/20 rounded-full blur-3xl" />
-      </div>
-
-      {/* Dot grid */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.25]"
-        aria-hidden
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, #a78bfa 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-
-      {/* Card */}
-      <div className="relative w-full max-w-[420px]">
-        {/* Logo above card */}
-        <Link
-          to="/"
-          className="flex items-center justify-center gap-2.5 font-bold text-xl mb-8"
-        >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-200">
-            <BookOpen className="w-4.5 h-4.5 text-white w-[18px] h-[18px]" />
-          </div>
-          Booker
-        </Link>
-
-        <div className="bg-white border border-border rounded-2xl shadow-xl shadow-black/[0.06] p-8">
+    <>
+      <div className="bg-white border border-border rounded-2xl shadow-xl shadow-black/[0.06] p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold tracking-tight mb-1.5">
@@ -291,20 +261,19 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Footer note */}
-        <p className="text-center text-xs text-muted-foreground/70 mt-6">
-          Al continuar aceptas nuestros{" "}
-          <a href="#" className="underline underline-offset-2 hover:text-foreground transition-colors">
-            Términos de uso
-          </a>{" "}
-          y{" "}
-          <a href="#" className="underline underline-offset-2 hover:text-foreground transition-colors">
-            Política de privacidad
-          </a>
-          .
-        </p>
-      </div>
-    </div>
+      {/* Footer note */}
+      <p className="text-center text-xs text-muted-foreground/70 mt-6">
+        Al continuar aceptas nuestros{" "}
+        <a href="#" className="underline underline-offset-2 hover:text-foreground transition-colors">
+          Términos de uso
+        </a>{" "}
+        y{" "}
+        <a href="#" className="underline underline-offset-2 hover:text-foreground transition-colors">
+          Política de privacidad
+        </a>
+        .
+      </p>
+    </>
   );
 }
 

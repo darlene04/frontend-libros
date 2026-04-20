@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import AuthLayout from "@/layouts/AuthLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function PlaceholderPage({ title }: { title: string }) {
@@ -17,8 +18,12 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+
+      {/* Auth — shared chrome via AuthLayout */}
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
 
       {/* Protected */}
       <Route
