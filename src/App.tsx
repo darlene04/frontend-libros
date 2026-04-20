@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function PlaceholderPage({ title }: { title: string }) {
@@ -17,7 +18,7 @@ export default function App() {
       {/* Public */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<PlaceholderPage title="Registro" />} />
+      <Route path="/register" element={<Register />} />
 
       {/* Protected */}
       <Route
