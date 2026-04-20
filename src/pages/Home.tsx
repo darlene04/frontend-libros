@@ -9,6 +9,9 @@ import {
   Clock,
   ArrowRight,
   Flame,
+  Sun,
+  Sunset,
+  Moon,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -71,40 +74,123 @@ const getKPIs = (firstName: string) => [
   },
 ];
 
+// Greeting
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) {
+    return {
+      saludo:     "Buenos días",
+      icon:       Sun,
+      tagline:    "El mejor momento para descubrir tu próxima lectura.",
+      chip:       "Mañana lectora",
+    };
+  }
+  if (hour >= 12 && hour < 19) {
+    return {
+      saludo:     "Buenas tardes",
+      icon:       Sunset,
+      tagline:    "¿Cuál será tu próxima historia? Hay libros esperándote.",
+      chip:       "Tarde de libros",
+    };
+  }
+  return {
+    saludo:     "Buenas noches",
+    icon:       Moon,
+    tagline:    "Una última página antes de dormir... o quizás un libro nuevo.",
+    chip:       "Noche de lectura",
+  };
+}
+
 export default function Home() {
   const user      = useAuthStore((s) => s.user);
   const firstName = user?.name.split(" ")[0] ?? "Lector";
   const kpis      = getKPIs(firstName);
 
+  const greeting = getGreeting();
+  const GreetIcon = greeting.icon;
+
   return (
     <div className="max-w-6xl mx-auto space-y-10">
-      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-full">
-              Bienvenid@ de vuelta
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Hola, {firstName}
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
-            Descubre libros cerca de ti, conecta con lectores y da nueva vida a tu colección.
-          </p>
-        </div>
 
-        <Link
-          to="/mis-libros/nuevo"
-          className={cn(
-            "inline-flex items-center gap-2 self-start sm:self-auto flex-shrink-0",
-            "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2.5",
-            "text-sm font-semibold text-white shadow-sm shadow-violet-200",
-            "hover:from-violet-700 hover:to-purple-700 transition-all duration-150 active:scale-95"
-          )}
-        >
-          <Plus className="w-4 h-4" />
-          Publicar libro
-        </Link>
+      {/* Welcome hero */}
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-white px-6 py-8 sm:px-10 sm:py-10">
+        {/* Blobs */}
+        <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-violet-100/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-purple-100/30 blur-3xl" />
+        {/* Dot grid */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #7c3aed 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          {/* Left */}
+          <div className="space-y-4">
+            {/* Chip */}
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-full">
+              <GreetIcon className="w-3 h-3" />
+              {greeting.chip}
+            </span>
+
+            {/* Heading */}
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-muted-foreground">
+                {greeting.saludo},
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
+                <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                  {firstName}.
+                </span>
+              </h1>
+            </div>
+
+            {/* Tagline */}
+            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+              {greeting.tagline}
+            </p>
+
+            {/* Pills + CTA */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {user?.location && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted border border-border/60 px-2.5 py-1 rounded-full">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  {user.location}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted border border-border/60 px-2.5 py-1 rounded-full">
+                <BookOpen className="w-3 h-3 flex-shrink-0" />
+                {BOOKS.length} libros disponibles
+              </span>
+
+              <Link
+                to="/mis-libros/nuevo"
+                className={cn(
+                  "inline-flex items-center gap-1.5",
+                  "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-1.5",
+                  "text-xs font-semibold text-white shadow-sm shadow-violet-200",
+                  "hover:from-violet-700 hover:to-purple-700 transition-all duration-150 active:scale-95"
+                )}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Publicar libro
+              </Link>
+            </div>
+          </div>
+
+          {/* Right — mini stat accent */}
+          <div className="hidden lg:flex flex-col items-end gap-2 flex-shrink-0 self-center">
+            <div className="flex flex-col items-center justify-center w-24 h-24 rounded-2xl bg-violet-50 border border-violet-100 gap-1">
+              <span className="text-3xl font-bold text-violet-600">{BOOKS.length}</span>
+              <span className="text-[10px] text-violet-500 font-medium text-center leading-tight">libros<br/>disponibles</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground/60 text-right max-w-[96px] leading-snug">
+              Actualizado hoy
+            </p>
+          </div>
+        </div>
       </section>
       <section>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -245,7 +331,6 @@ function BookCard({ book }: { book: Book }) {
           alt={book.title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        {/* Mode badge overlay */}
         <div className="absolute top-2 left-2">
           <ModeBadge mode={book.mode} size="sm" />
         </div>
@@ -318,7 +403,6 @@ function BookCardCompact({ book }: { book: Book }) {
 function CTABanner({ userName }: { userName: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 p-6 sm:p-8">
-      {/* Blobs */}
       <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
       <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
 
