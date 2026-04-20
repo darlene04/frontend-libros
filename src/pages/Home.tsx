@@ -21,11 +21,11 @@ import {
   TRANSACTIONS,
   MY_BOOKS,
   STATS_DATA,
+  USERS,
 } from "@/data/mock";
-import { cn, formatRelativeTime } from "@/lib/utils";
-import { ConditionBadge, ModeBadge } from "@/components/shared/Badge";
+import { cn } from "@/lib/utils";
+import { BookGrid, BookListItem } from "@/components/books";
 import StarRating from "@/components/shared/StarRating";
-import type { Book } from "@/types";
 
 const ALL_BOOKS_SORTED = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 const FEATURED_BOOKS   = BOOKS.filter((b) => b.isFeatured);
@@ -34,6 +34,19 @@ const SHOWCASE_BOOKS   = [
   ...FEATURED_BOOKS,
   ...BOOKS.filter((b) => !b.isFeatured),
 ].slice(0, 6);
+const BOOK_OWNERS = Object.fromEntries(
+  USERS.map((user) => [
+    user.id,
+    {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      location: user.location,
+      rating: user.rating,
+      profileHref: "/perfil",
+    },
+  ])
+);
 
 const FILTER_GENRES = [
   "Todos",
@@ -223,12 +236,6 @@ export default function Home() {
                 Publicar libro
               </Link>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:max-w-xl sm:grid-cols-3">
-              <HeroStat label="Tu catálogo" value={MY_BOOKS.length.toString()} />
-              <HeroStat label="Solicitudes activas" value={PENDING_COUNT.toString()} />
-              <HeroStat label="Ingresos del mes" value={`S/ ${MONTHLY_REVENUE}`} />
-            </div>
           </div>
 
           {/* Right — mini stat accent */}
@@ -247,21 +254,6 @@ export default function Home() {
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Descubre títulos nuevos, coordina intercambios y mantiene tu biblioteca en movimiento.
                 </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/70 bg-muted/40 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-                Estado de hoy
-              </p>
-              <div className="mt-3 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-3xl font-bold leading-none text-violet-600">{BOOKS.length}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">libros visibles ahora</p>
-                </div>
-                <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
-                  Actualizado
-                </span>
               </div>
             </div>
           </div>
@@ -323,11 +315,12 @@ export default function Home() {
           cta="Ver todos"
         />
         {filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-            {filteredBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
-            ))}
-          </div>
+          <BookGrid
+            books={filteredBooks}
+            ownersById={BOOK_OWNERS}
+            columns={3}
+            className="grid-cols-2 sm:grid-cols-3 xl:grid-cols-3"
+          />
         ) : (
           <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 py-14">
             <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
@@ -367,7 +360,9 @@ export default function Home() {
                     <BookListItem
                       key={book.id}
                       book={book}
+                      owner={BOOK_OWNERS[book.ownerId]}
                       index={ci * Math.ceil(filteredRecent.length / 2) + i}
+                      className="rounded-none border-0 bg-transparent p-4 shadow-none hover:bg-violet-50/40"
                     />
                   ))}
                 </div>
@@ -515,118 +510,6 @@ function SectionHeader({ title, subtitle, icon: Icon, href, cta }: SectionHeader
   );
 }
 
-function BookCard({ book }: { book: Book }) {
-  return (
-    <Link
-      to={`/libro/${book.id}`}
-      className="group relative block overflow-hidden rounded-[20px] border border-border/80 bg-muted shadow-[0_12px_28px_-24px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-xl hover:shadow-black/15"
-    >
-      {/* Cover — full bleed */}
-      <div className="relative aspect-[4/5] overflow-hidden">
-        <img
-          src={book.cover}
-          alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-        />
-
-        {/* Top badges */}
-        <div className="absolute left-2 top-2 flex gap-1">
-          <ModeBadge mode={book.mode} size="sm" />
-          {book.isFeatured && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/90 text-amber-950 backdrop-blur-sm">
-              <Flame className="w-2.5 h-2.5" />
-              Destacado
-            </span>
-          )}
-        </div>
-
-        {/* Bottom gradient */}
-        <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-        {/* Content overlay */}
-        <div className="absolute inset-x-0 bottom-0 space-y-1.5 p-3 sm:p-3.5">
-          {/* Title + author */}
-          <div>
-            <p className="text-white font-semibold text-[13px] leading-snug line-clamp-2 drop-shadow">
-              {book.title}
-            </p>
-            <p className="text-white/65 text-[11px] mt-0.5 truncate">{book.author}</p>
-          </div>
-
-          {/* Footer row */}
-          <div className="flex items-center justify-between">
-            <ConditionBadge condition={book.condition} size="sm" />
-            {book.price != null ? (
-              <span className="text-white font-bold text-[13px] drop-shadow">
-                S/ {book.price}
-              </span>
-            ) : (
-              <span className="text-[10px] font-semibold text-white/90 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                Gratis
-              </span>
-            )}
-          </div>
-
-          {/* Location */}
-          <div className="flex items-center gap-1 text-[10px] text-white/50">
-            <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-            <span className="truncate">{book.location}</span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function BookListItem({ book, index }: { book: Book; index: number }) {
-  return (
-    <Link
-      to={`/libro/${book.id}`}
-      className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-violet-50/40"
-    >
-      {/* Rank */}
-      <span className="w-4 text-right text-xs font-mono text-muted-foreground/30 flex-shrink-0 select-none">
-        {String(index + 1).padStart(2, "0")}
-      </span>
-
-      {/* Cover */}
-      <div className="relative h-[54px] w-10 flex-shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-border/80">
-        <img
-          src={book.cover}
-          alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-        />
-      </div>
-
-      {/* Info */}
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-sm font-semibold text-foreground leading-tight truncate group-hover:text-violet-700 transition-colors">
-          {book.title}
-        </p>
-        <p className="text-xs text-muted-foreground truncate">{book.author}</p>
-        <div className="flex items-center gap-1.5">
-          <ModeBadge mode={book.mode} size="sm" />
-          <ConditionBadge condition={book.condition} size="sm" />
-        </div>
-      </div>
-
-      {/* Right */}
-      <div className="flex flex-shrink-0 flex-col items-end gap-1">
-        {book.price != null ? (
-          <span className="text-xs font-bold text-foreground tabular-nums">S/ {book.price}</span>
-        ) : (
-          <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 px-1.5 py-0.5 rounded-full">
-            Gratis
-          </span>
-        )}
-        <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
-          {formatRelativeTime(book.createdAt)}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
 function CTABanner({ userName }: { userName: string }) {
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-violet-500/20 bg-gradient-to-br from-violet-600 via-violet-600 to-purple-700 p-6 shadow-[0_24px_50px_-28px_rgba(124,58,237,0.6)] sm:p-8">
@@ -666,19 +549,6 @@ function CTABanner({ userName }: { userName: string }) {
           </Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-function HeroStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-white/75 px-3.5 py-3 backdrop-blur-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-        {value}
-      </p>
     </div>
   );
 }
