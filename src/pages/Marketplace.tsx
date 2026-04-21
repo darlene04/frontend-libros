@@ -12,6 +12,10 @@ import {
   Check,
   ChevronDown,
   ArrowUpDown,
+  Store,
+  Tag,
+  Repeat2,
+  Heart,
 } from "lucide-react";
 import { BOOKS, GENRES, USERS } from "@/data/mock";
 import { cn, formatRelativeTime } from "@/lib/utils";
@@ -120,26 +124,65 @@ export default function Marketplace() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Marketplace</h1>
-          <p className="text-sm text-muted-foreground">
-            {BOOKS.length} libros disponibles · encuentra tu próxima lectura
-          </p>
+      {/* ── Hero header ───────────────────────────────────────────────────── */}
+      <div className="relative rounded-2xl border border-border bg-white overflow-hidden px-6 py-8 sm:px-8">
+        {/* Background decoration */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-violet-100/50 blur-3xl" />
+          <div className="absolute -bottom-12 -left-8 w-48 h-48 rounded-full bg-purple-100/40 blur-2xl" />
+          <div
+            className="absolute inset-0 opacity-[0.015]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, #7c3aed 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
         </div>
-        <Link
-          to="/mis-libros/nuevo"
-          className={cn(
-            "inline-flex items-center gap-2 self-start sm:self-auto flex-shrink-0",
-            "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2.5",
-            "text-sm font-semibold text-white shadow-sm shadow-violet-200",
-            "hover:from-violet-700 hover:to-purple-700 transition-all duration-150 active:scale-95"
-          )}
-        >
-          <Plus className="w-4 h-4" />
-          Publicar libro
-        </Link>
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          {/* Text block */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-md shadow-violet-200/60 flex-shrink-0">
+                <Store className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                Market
+                <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                  place
+                </span>
+              </h1>
+            </div>
+
+            <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
+              Explora libros disponibles para compra, intercambio o donación.
+              Conecta con lectores cerca de ti y dale vida a tu próxima lectura.
+            </p>
+
+            {/* Stat pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <StatPill icon={BookOpen}  label={`${BOOKS.length} libros disponibles`} color="violet" />
+              <StatPill icon={Tag}       label="Venta directa"                         color="purple" />
+              <StatPill icon={Repeat2}   label="Intercambios"                          color="blue"   />
+              <StatPill icon={Heart}     label="Donaciones"                            color="green"  />
+            </div>
+          </div>
+
+          {/* CTA */}
+          <Link
+            to="/mis-libros/nuevo"
+            className={cn(
+              "inline-flex items-center gap-2 self-start sm:self-auto flex-shrink-0",
+              "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-3",
+              "text-sm font-semibold text-white shadow-sm shadow-violet-200",
+              "hover:from-violet-700 hover:to-purple-700 transition-all duration-150 active:scale-95"
+            )}
+          >
+            <Plus className="w-4 h-4" />
+            Publicar libro
+          </Link>
+        </div>
       </div>
 
       {/* ── Search + controls ─────────────────────────────────────────────── */}
@@ -321,6 +364,35 @@ export default function Marketplace() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Stat pill ────────────────────────────────────────────────────────────────
+
+const STAT_PILL_COLORS = {
+  violet: "bg-violet-50 text-violet-700 border-violet-100",
+  purple: "bg-purple-50 text-purple-700 border-purple-100",
+  blue:   "bg-blue-50   text-blue-700   border-blue-100",
+  green:  "bg-green-50  text-green-700  border-green-100",
+};
+
+function StatPill({
+  icon: Icon,
+  label,
+  color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  color: keyof typeof STAT_PILL_COLORS;
+}) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium",
+      STAT_PILL_COLORS[color]
+    )}>
+      <Icon className="w-3 h-3" />
+      {label}
+    </span>
   );
 }
 
