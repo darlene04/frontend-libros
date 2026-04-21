@@ -4,7 +4,6 @@ import {
   Search,
   LayoutGrid,
   List,
-  BookOpen,
   MapPin,
   Plus,
   X,
@@ -15,10 +14,15 @@ import {
   Tag,
   Repeat2,
   Layers,
+  AlertCircle,
+  RefreshCw,
+  SearchX,
 } from "lucide-react";
 import { BOOKS, GENRES, USERS } from "@/data/mock";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConditionBadge, ModeBadge } from "@/components/shared/Badge";
+import { Skeleton } from "@/components/shared/LoadingCard";
+import EmptyState from "@/components/shared/EmptyState";
 import Avatar from "@/components/shared/Avatar";
 import type { Book, BookCondition, BookMode } from "@/types";
 
@@ -71,7 +75,24 @@ export default function Marketplace() {
   const [sortBy, setSortBy]     = useState<SortOption>("recent");
   const [filters, setFilters]   = useState<FilterState>(EMPTY_FILTERS);
   const [sortOpen, setSortOpen] = useState(false);
-  const sortRef                 = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError]     = useState(false);
+  const sortRef                   = useRef<HTMLDivElement>(null);
+
+  // Simulates async fetch — swap for useQuery when backend is ready
+  useEffect(() => {
+    setIsLoading(true);
+    setIsError(false);
+    const t = setTimeout(() => setIsLoading(false), 900);
+    return () => clearTimeout(t);
+  }, []);
+
+  function handleRetry() {
+    setIsError(false);
+    setIsLoading(true);
+    const t = setTimeout(() => setIsLoading(false), 900);
+    return () => clearTimeout(t);
+  }
 
   const hasActiveFilters =
     filters.mode !== "all" ||
@@ -209,34 +230,157 @@ export default function Marketplace() {
 
       {/* ── Results ───────────────────────────────────────────────────────── */}
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{filteredBooks.length}</span>
-          {" "}libro{filteredBooks.length !== 1 ? "s" : ""} encontrado{filteredBooks.length !== 1 ? "s" : ""}
-        </p>
-
-        {filteredBooks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 rounded-2xl border border-dashed border-border bg-muted/20">
-            <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-violet-400" />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-sm font-semibold">Sin resultados</p>
-              <p className="text-xs text-muted-foreground max-w-xs">No encontramos libros con esos filtros.</p>
-            </div>
-            <button onClick={clearFilters} className="text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors">
-              Limpiar filtros
-            </button>
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-            {filteredBooks.map((book) => <BookCardGrid key={book.id} book={book} />)}
-          </div>
+        {isLoading ? (
+          <ResultsLoading viewMode={viewMode} />
+        ) : isError ? (
+          <ResultsError onRetry={handleRetry} />
         ) : (
-          <div className="rounded-2xl border border-border bg-white overflow-hidden divide-y divide-border/60">
-            {filteredBooks.map((book, i) => <BookCardList key={book.id} book={book} index={i} />)}
-          </div>
+          <>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{filteredBooks.length}</span>
+              {" "}libro{filteredBooks.length !== 1 ? "s" : ""} encontrado{filteredBooks.length !== 1 ? "s" : ""}
+            </p>
+
+            {filteredBooks.length === 0 ? (
+              <EmptyState
+                icon={SearchX}
+                title={hasActiveFilters ? "Sin resultados para estos filtros" : "No hay libros disponibles"}
+                description={
+                  hasActiveFilters
+                    ? "Prueba ajustando o limpiando los filtros para ver más libros."
+                    : "Sé el primero en publicar un libro en el marketplace."
+                }
+                action={
+                  hasActiveFilters ? (
+                    <button
+                      onClick={clearFilters}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-violet-700 bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Limpiar filtros
+                    </button>
+                  ) : (
+                    <Link
+                      to="/mis-libros/nuevo"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-sm shadow-violet-200 hover:from-violet-700 hover:to-purple-700 transition-all active:scale-95"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Publicar libro
+                    </Link>
+                  )
+                }
+                className="rounded-2xl border border-dashed border-border bg-muted/20"
+              />
+            ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                {filteredBooks.map((book) => <BookCardGrid key={book.id} book={book} />)}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-white overflow-hidden divide-y divide-border/60">
+                {filteredBooks.map((book, i) => <BookCardList key={book.id} book={book} index={i} />)}
+              </div>
+            )}
+          </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Loading state ────────────────────────────────────────────────────────────
+
+function BookCardGridSkeleton() {
+  return (
+    <div className="rounded-2xl overflow-hidden border border-border bg-muted">
+      <div className="aspect-[3/4] animate-pulse bg-gradient-to-br from-muted to-muted-foreground/10 relative">
+        <div className="absolute inset-x-0 bottom-0 p-4 space-y-2">
+          <Skeleton className="h-3 w-3/4 opacity-30" />
+          <Skeleton className="h-2.5 w-1/2 opacity-20" />
+          <div className="flex items-center justify-between pt-0.5">
+            <Skeleton className="h-4 w-14 rounded-full opacity-20" />
+            <Skeleton className="h-4 w-10 opacity-20" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookCardListSkeleton() {
+  return (
+    <div className="flex items-center gap-4 px-5 py-4">
+      <span className="hidden sm:block w-5 flex-shrink-0" />
+      <Skeleton className="w-11 h-16 rounded-xl flex-shrink-0" />
+      <div className="flex-1 min-w-0 space-y-2">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
+        <div className="flex gap-1.5 pt-0.5">
+          <Skeleton className="h-4 w-12 rounded-full" />
+          <Skeleton className="h-4 w-16 rounded-full" />
+        </div>
+      </div>
+      <div className="hidden md:flex items-center gap-2">
+        <Skeleton className="w-6 h-6 rounded-full" />
+        <div className="space-y-1">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-2.5 w-12" />
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1.5 ml-2 flex-shrink-0">
+        <Skeleton className="h-4 w-14" />
+        <Skeleton className="h-3 w-10" />
+      </div>
+    </div>
+  );
+}
+
+function ResultsLoading({ viewMode }: { viewMode: ViewMode }) {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-4 w-36" />
+      {viewMode === "grid" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <BookCardGridSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-border bg-white overflow-hidden divide-y divide-border/60">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <BookCardListSkeleton key={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Error state ──────────────────────────────────────────────────────────────
+
+function ResultsError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-5 rounded-2xl border border-dashed border-red-200 bg-red-50/30">
+      <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center ring-1 ring-red-200">
+        <AlertCircle className="w-5 h-5 text-red-500" />
+      </div>
+      <div className="text-center space-y-1.5 max-w-xs">
+        <p className="text-sm font-semibold text-foreground">No se pudo cargar el catálogo</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Ocurrió un error al obtener los libros. Verifica tu conexión e intenta de nuevo.
+        </p>
+      </div>
+      <button
+        onClick={onRetry}
+        className={cn(
+          "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold",
+          "text-white bg-gradient-to-r from-violet-600 to-purple-600",
+          "shadow-sm shadow-violet-200 hover:from-violet-700 hover:to-purple-700",
+          "transition-all duration-150 active:scale-95"
+        )}
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+        Reintentar
+      </button>
     </div>
   );
 }
