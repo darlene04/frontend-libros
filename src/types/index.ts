@@ -2,7 +2,7 @@
 
 export type BookCondition = "new" | "like-new" | "good" | "acceptable" | "poor";
 
-export type BookMode = "sell" | "exchange" | "donate";
+export type BookMode = "sell" | "exchange" | "donate" | "loan";
 
 export type TransactionStatus =
   | "pending"
