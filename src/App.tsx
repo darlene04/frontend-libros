@@ -29,6 +29,7 @@ export default function App() {
       {/* Protected — AppLayout + ProtectedRoute como doble wrapper */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+          <Route path="/dashboard"     element={<></>} />
           <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
           <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
