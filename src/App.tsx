@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
 import AuthLayout from "@/layouts/AuthLayout";
 import AppLayout from "@/layouts/AppLayout";
 import ProtectedRoute from "@/layouts/ProtectedRoute";
@@ -29,7 +30,7 @@ export default function App() {
       {/* Protected — AppLayout + ProtectedRoute como doble wrapper */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard"     element={<></>} />
+          <Route path="/dashboard"     element={<Dashboard />} />
           <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
           <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
