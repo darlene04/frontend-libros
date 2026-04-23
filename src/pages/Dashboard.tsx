@@ -7,11 +7,17 @@ import {
   BookMarked,
   Star,
   ShoppingBag,
+  MapPin,
+  CalendarDays,
+  MessageSquare,
 } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,6 +27,7 @@ import {
 import { useAuthStore } from "@/store/useAuthStore";
 import { BOOKS, TRANSACTIONS, REVIEWS, STATS_DATA } from "@/data/mock";
 import { cn, formatPrice } from "@/lib/utils";
+import Avatar from "@/components/shared/Avatar";
 import StarRating from "@/components/shared/StarRating";
 
 // ─── KPI data ─────────────────────────────────────────────────────────────────
@@ -137,6 +144,205 @@ export default function Dashboard() {
       {/* ── Area chart ────────────────────────────────────────────────────── */}
       <AreaChartCard />
 
+      {/* ── Profile + Bar chart ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <ProfileCard user={user} kpis={kpis} />
+        <div className="lg:col-span-2">
+          <BarChartCard />
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ─── Profile card ────────────────────────────────────────────────────────────
+
+interface ProfileCardProps {
+  user: ReturnType<typeof useAuthStore>["user"];
+  kpis: { rating: number; reviewCount: number; booksPosted: number };
+}
+
+function ProfileCard({ user, kpis }: ProfileCardProps) {
+  if (!user) return null;
+
+  const joinedYear = new Intl.DateTimeFormat("es-PE", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(user.joinedAt));
+
+  const stats = [
+    { label: "Libros",   value: user.booksPosted,  icon: BookMarked      },
+    { label: "Reseñas",  value: kpis.reviewCount,  icon: MessageSquare   },
+    { label: "Rating",   value: kpis.rating.toFixed(1), icon: Star        },
+  ];
+
+  return (
+    // Sin overflow-hidden para que el avatar pueda sobrepasar el borde del header
+    <div className="rounded-2xl border border-border bg-white flex flex-col h-full">
+
+      {/* Accent header — overflow-hidden solo aquí para el dot pattern */}
+      <div className="rounded-t-2xl h-20 bg-gradient-to-br from-violet-600 to-purple-700 relative overflow-hidden flex-shrink-0">
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
+            backgroundSize: "18px 18px",
+          }}
+          aria-hidden
+        />
+      </div>
+
+      {/* Avatar — colgando 50 % dentro del header y 50 % en el contenido */}
+      <div className="px-5 -mt-8 relative z-10 flex-shrink-0">
+        <Avatar
+          src={user.avatar}
+          name={user.name}
+          size="xl"
+          className="ring-4 ring-white shadow-lg"
+        />
+      </div>
+
+      {/* Main content */}
+      <div className="px-5 pb-5 pt-3 flex flex-col flex-1">
+
+        {/* Name + bio */}
+        <p className="text-base font-bold text-foreground leading-tight">{user.name}</p>
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+          {user.bio}
+        </p>
+
+        {/* Location + joined */}
+        <div className="mt-3 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+            {user.location}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+            Miembro desde {joinedYear}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="border-t border-border/60 mt-4 pt-4 flex items-center justify-between">
+          {stats.map(({ label, value, icon: Icon }) => (
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center">
+                <Icon className="w-3.5 h-3.5 text-violet-600" />
+              </div>
+              <p className="text-sm font-bold text-foreground tabular-nums">{value}</p>
+              <p className="text-[10px] text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Star rating */}
+        <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between">
+          <StarRating value={kpis.rating} size="sm" showValue />
+          <span className="text-[11px] text-muted-foreground">{kpis.reviewCount} reseñas</span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ─── Bar chart card ───────────────────────────────────────────────────────────
+
+const BAR_DATA = STATS_DATA.map((d, i) => ({
+  month:   d.month,
+  ingresos: d.revenue,
+  isCurrent: i === STATS_DATA.length - 2, // highlight Nov
+}));
+
+function BarChartCard() {
+  return (
+    <div className="rounded-2xl border border-border bg-white p-6 h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Ingresos mensuales</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Ventas en soles — últimos 6 meses
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="w-3 h-3 rounded-sm bg-violet-600 flex-shrink-0" />
+          <span className="text-xs text-muted-foreground">Ingresos (S/)</span>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-[200px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={BAR_DATA}
+            margin={{ top: 4, right: 4, bottom: 0, left: -16 }}
+            barSize={28}
+          >
+            <defs>
+              <linearGradient id="gradBar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="#7c3aed" stopOpacity={1}    />
+                <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.85} />
+              </linearGradient>
+              <linearGradient id="gradBarMuted" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="#c4b5fd" stopOpacity={0.7} />
+                <stop offset="100%" stopColor="#ddd6fe" stopOpacity={0.5} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+
+            <XAxis
+              dataKey="month"
+              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              axisLine={false}
+              tickLine={false}
+              dy={6}
+            />
+
+            <YAxis
+              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              axisLine={false}
+              tickLine={false}
+              width={36}
+            />
+
+            <Tooltip
+              content={<BarTooltip />}
+              cursor={{ fill: "#f8fafc", radius: 8 }}
+            />
+
+            <Bar dataKey="ingresos" radius={[6, 6, 0, 0]} name="Ingresos">
+              {BAR_DATA.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={entry.isCurrent ? "url(#gradBar)" : "url(#gradBarMuted)"}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function BarTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-border bg-white shadow-lg shadow-black/10 px-4 py-3 min-w-[120px]">
+      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+        {label}
+      </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-violet-600 flex-shrink-0" />
+          <span className="text-xs text-muted-foreground">Ingresos</span>
+        </div>
+        <span className="text-xs font-semibold text-foreground tabular-nums">
+          S/ {payload[0].value}
+        </span>
+      </div>
     </div>
   );
 }
