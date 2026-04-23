@@ -10,6 +10,13 @@ import {
   MapPin,
   CalendarDays,
   MessageSquare,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Tag,
+  Repeat2,
+  Heart,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -25,8 +32,8 @@ import {
   type TooltipProps,
 } from "recharts";
 import { useAuthStore } from "@/store/useAuthStore";
-import { BOOKS, TRANSACTIONS, REVIEWS, STATS_DATA } from "@/data/mock";
-import { cn, formatPrice } from "@/lib/utils";
+import { BOOKS, TRANSACTIONS, REVIEWS, STATS_DATA, USERS } from "@/data/mock";
+import { cn, formatPrice, formatRelativeTime } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 import StarRating from "@/components/shared/StarRating";
 
@@ -150,6 +157,214 @@ export default function Dashboard() {
         <div className="lg:col-span-2">
           <BarChartCard />
         </div>
+      </div>
+
+      {/* ── Recent transactions ───────────────────────────────────────────── */}
+      <RecentTransactions />
+
+    </div>
+  );
+}
+
+// ─── Recent transactions ──────────────────────────────────────────────────────
+
+const STATUS_CONFIG = {
+  completed: {
+    label: "Completado",
+    icon:  CheckCircle2,
+    class: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  },
+  pending: {
+    label: "Pendiente",
+    icon:  Clock,
+    class: "bg-amber-50 text-amber-700 border-amber-100",
+  },
+  accepted: {
+    label: "Aceptado",
+    icon:  RefreshCw,
+    class: "bg-blue-50 text-blue-700 border-blue-100",
+  },
+  rejected: {
+    label: "Rechazado",
+    icon:  XCircle,
+    class: "bg-red-50 text-red-600 border-red-100",
+  },
+  cancelled: {
+    label: "Cancelado",
+    icon:  XCircle,
+    class: "bg-muted text-muted-foreground border-border",
+  },
+} as const;
+
+const MODE_CONFIG = {
+  sell:     { label: "Venta",       icon: Tag,     class: "text-violet-700 bg-violet-50 border-violet-100" },
+  exchange: { label: "Intercambio", icon: Repeat2,  class: "text-blue-700 bg-blue-50 border-blue-100"     },
+  donate:   { label: "Donación",    icon: Heart,   class: "text-green-700 bg-green-50 border-green-100"   },
+  loan:     { label: "Préstamo",    icon: BookMarked, class: "text-orange-700 bg-orange-50 border-orange-100" },
+} as const;
+
+function RecentTransactions() {
+  const rows = TRANSACTIONS.slice().reverse().map((t) => {
+    const book         = BOOKS.find((b) => b.id === t.bookId);
+    const counterparty = USERS.find((u) => u.id === t.sellerId) ?? USERS.find((u) => u.id === t.buyerId);
+    const status       = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.pending;
+    const mode         = MODE_CONFIG[t.mode]   ?? MODE_CONFIG.sell;
+    return { t, book, counterparty, status, mode };
+  });
+
+  return (
+    <div className="rounded-2xl border border-border bg-white overflow-hidden">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Transacciones recientes</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Últimos movimientos de tu cuenta</p>
+        </div>
+        <span className="text-[11px] font-medium text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-full">
+          {rows.length} registros
+        </span>
+      </div>
+
+      {/* Table — desktop */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/30">
+              {["Libro / Contraparte", "Tipo", "Fecha", "Monto", "Estado"].map((h) => (
+                <th
+                  key={h}
+                  className="text-left text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-6 py-3 whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {rows.map(({ t, book, counterparty, status, mode }) => {
+              const StatusIcon = status.icon;
+              const ModeIcon   = mode.icon;
+              return (
+                <tr
+                  key={t.id}
+                  className="hover:bg-violet-50/20 transition-colors group"
+                >
+                  {/* Book + counterparty */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      {book && (
+                        <div className="w-8 h-11 rounded-lg overflow-hidden bg-muted flex-shrink-0 ring-1 ring-border">
+                          <img
+                            src={book.cover}
+                            alt={book.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate max-w-[160px] group-hover:text-violet-700 transition-colors">
+                          {book?.title ?? "—"}
+                        </p>
+                        {counterparty && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Avatar src={counterparty.avatar} name={counterparty.name} size="xs" />
+                            <span className="text-xs text-muted-foreground truncate">
+                              {counterparty.name.split(" ")[0]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Mode */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium",
+                      mode.class
+                    )}>
+                      <ModeIcon className="w-3 h-3" />
+                      {mode.label}
+                    </span>
+                  </td>
+
+                  {/* Date */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <p className="text-sm text-foreground tabular-nums">
+                      {new Intl.DateTimeFormat("es-PE", { day: "numeric", month: "short", year: "numeric" })
+                        .format(new Date(t.createdAt))}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {formatRelativeTime(t.createdAt)}
+                    </p>
+                  </td>
+
+                  {/* Amount */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {t.agreedPrice != null ? (
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {formatPrice(t.agreedPrice)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/60 italic">—</span>
+                    )}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium",
+                      status.class
+                    )}>
+                      <StatusIcon className="w-3 h-3" />
+                      {status.label}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* List — mobile */}
+      <div className="md:hidden divide-y divide-border/50">
+        {rows.map(({ t, book, counterparty, status, mode }) => {
+          const StatusIcon = status.icon;
+          const ModeIcon   = mode.icon;
+          return (
+            <div key={t.id} className="flex items-start gap-3 px-5 py-4">
+              {book && (
+                <div className="w-9 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 ring-1 ring-border">
+                  <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-sm font-medium text-foreground truncate">{book?.title ?? "—"}</p>
+                {counterparty && (
+                  <p className="text-xs text-muted-foreground">{counterparty.name.split(" ")[0]}</p>
+                )}
+                <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                  <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium", mode.class)}>
+                    <ModeIcon className="w-2.5 h-2.5" />{mode.label}
+                  </span>
+                  <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium", status.class)}>
+                    <StatusIcon className="w-2.5 h-2.5" />{status.label}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                {t.agreedPrice != null ? (
+                  <span className="text-sm font-semibold tabular-nums">{formatPrice(t.agreedPrice)}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
+                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(t.createdAt)}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
     </div>
