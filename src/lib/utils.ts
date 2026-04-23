@@ -2,17 +2,17 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { BookCondition, BookMode } from "@/types";
 
-// ─── Classnames ───────────────────────────────────────────────────────────────
+//Classnames
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// ─── Formatting ───────────────────────────────────────────────────────────────
+//Formatting
 
-const priceFormatter = new Intl.NumberFormat("es-MX", {
+const priceFormatter = new Intl.NumberFormat("es-PE", {
   style: "currency",
-  currency: "MXN",
+  currency: "PEN",
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
@@ -21,7 +21,7 @@ export function formatPrice(amount: number): string {
   return priceFormatter.format(amount);
 }
 
-const dateFormatter = new Intl.DateTimeFormat("es-MX", {
+const dateFormatter = new Intl.DateTimeFormat("es-PE", {
   day: "numeric",
   month: "long",
   year: "numeric",
@@ -56,15 +56,13 @@ export function formatRelativeTime(dateString: string): string {
   return `hace ${diffYears} años`;
 }
 
-// ─── String helpers ───────────────────────────────────────────────────────────
-
+//String helpers
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength).trimEnd() + "…";
 }
 
-// ─── Book condition ───────────────────────────────────────────────────────────
-
+//Book condition
 export const CONDITION_LABELS: Record<BookCondition, string> = {
   new: "Nuevo",
   "like-new": "Como nuevo",
@@ -81,8 +79,7 @@ export const CONDITION_COLORS: Record<BookCondition, string> = {
   poor: "bg-red-100 text-red-800",
 };
 
-// ─── Book mode ────────────────────────────────────────────────────────────────
-
+//Book mode
 export const MODE_LABELS: Record<BookMode, string> = {
   sell:     "Venta",
   exchange: "Intercambio",
