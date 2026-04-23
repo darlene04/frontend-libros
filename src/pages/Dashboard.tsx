@@ -8,6 +8,16 @@ import {
   Star,
   ShoppingBag,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  type TooltipProps,
+} from "recharts";
 import { useAuthStore } from "@/store/useAuthStore";
 import { BOOKS, TRANSACTIONS, REVIEWS, STATS_DATA } from "@/data/mock";
 import { cn, formatPrice } from "@/lib/utils";
@@ -20,6 +30,13 @@ const MONTH_LABEL = new Intl.DateTimeFormat("es-PE", { month: "long" }).format(n
 // Use the two most recent stat entries to compute trends
 const CUR  = STATS_DATA[STATS_DATA.length - 2]; // Nov — most complete month
 const PREV = STATS_DATA[STATS_DATA.length - 3]; // Oct
+
+// Chart series — revenue + transactions per month
+const CHART_DATA = STATS_DATA.map((d) => ({
+  month:        d.month,
+  ventas:       d.revenue,
+  intercambios: d.transactions,
+}));
 
 function pct(cur: number, prev: number) {
   if (prev === 0) return null;
@@ -116,6 +133,136 @@ export default function Dashboard() {
         />
 
       </div>
+
+      {/* ── Area chart ────────────────────────────────────────────────────── */}
+      <AreaChartCard />
+
+    </div>
+  );
+}
+
+// ─── Area chart card ──────────────────────────────────────────────────────────
+
+function AreaChartCard() {
+  return (
+    <div className="rounded-2xl border border-border bg-white p-6">
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Actividad mensual</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Ventas e intercambios — últimos 6 meses
+          </p>
+        </div>
+        <div className="flex items-center gap-5 flex-shrink-0">
+          <LegendDot color="#7c3aed" label="Ventas (S/)" />
+          <LegendDot color="#3b82f6" label="Intercambios" />
+        </div>
+      </div>
+
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height={240}>
+        <AreaChart data={CHART_DATA} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+          <defs>
+            <linearGradient id="gradVentas" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor="#7c3aed" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}    />
+            </linearGradient>
+            <linearGradient id="gradIntercambios" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.14} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}    />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="#f1f5f9"
+            vertical={false}
+          />
+
+          <XAxis
+            dataKey="month"
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            axisLine={false}
+            tickLine={false}
+            dy={6}
+          />
+
+          <YAxis
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v) => `${v}`}
+            width={36}
+          />
+
+          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }} />
+
+          <Area
+            type="monotone"
+            dataKey="ventas"
+            name="Ventas"
+            stroke="#7c3aed"
+            strokeWidth={2}
+            fill="url(#gradVentas)"
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0, fill: "#7c3aed" }}
+          />
+
+          <Area
+            type="monotone"
+            dataKey="intercambios"
+            name="Intercambios"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            fill="url(#gradIntercambios)"
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0, fill: "#3b82f6" }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── Chart tooltip ────────────────────────────────────────────────────────────
+
+function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-white shadow-lg shadow-black/10 px-4 py-3 min-w-[148px]">
+      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">
+        {label}
+      </p>
+      <div className="space-y-1.5">
+        {payload.map((entry) => (
+          <div key={entry.dataKey} className="flex items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: entry.color }}
+              />
+              <span className="text-xs text-muted-foreground">{entry.name}</span>
+            </div>
+            <span className="text-xs font-semibold text-foreground tabular-nums">
+              {entry.dataKey === "ventas" ? `S/ ${entry.value}` : entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Legend dot ───────────────────────────────────────────────────────────────
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }
