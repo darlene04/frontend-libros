@@ -45,7 +45,7 @@ export default function App() {
 
           <Route path="/mi-biblioteca"  element={<Library />} />
           <Route path="/dashboard"     element={<Dashboard />} />
-          <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
+          <Route path="/explorar"      element={<Home />} />
           <Route path="/marketplace"   element={<Marketplace />} />
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
           <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
