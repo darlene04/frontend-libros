@@ -1,8 +1,24 @@
-import { useMemo } from "react";
-import { Library, BookMarked, Eye, Bookmark, TrendingUp } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Library, BookMarked, Eye, Bookmark, TrendingUp, Tag, Repeat2, BookLock } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { BOOKS } from "@/data/mock";
 import { cn } from "@/lib/utils";
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+type LibraryTab = "all" | "sell" | "exchange" | "reserved";
+
+const TABS: {
+  value:   LibraryTab;
+  label:   string;
+  icon:    React.ElementType;
+  count:   number;
+}[] = [
+  { value: "all",      label: "Todos",       icon: BookMarked, count: 9 },
+  { value: "sell",     label: "Venta",       icon: Tag,        count: 5 },
+  { value: "exchange", label: "Intercambio", icon: Repeat2,    count: 3 },
+  { value: "reserved", label: "Reservado",   icon: BookLock,   count: 1 },
+];
 
 // ─── Mock stats not yet in backend ───────────────────────────────────────────
 
@@ -15,6 +31,7 @@ const MOCK_SAVED_TREND = 12;
 
 export default function LibraryPage() {
   const user = useAuthStore((s) => s.user);
+  const [activeTab, setActiveTab] = useState<LibraryTab>("all");
 
   const published = useMemo(
     () => user?.booksPosted ?? BOOKS.filter((b) => b.ownerId === user?.id).length,
@@ -74,6 +91,39 @@ export default function LibraryPage() {
         {stats.map((s, i) => (
           <StatBlock key={i} {...s} />
         ))}
+      </div>
+
+      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
+      <div className="bg-muted/50 border border-border rounded-2xl p-1 flex gap-0.5">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.value;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150",
+                isActive
+                  ? "bg-white text-violet-700 shadow-sm border border-border/60"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/60"
+              )}
+            >
+              <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", isActive ? "text-violet-600" : "text-current")} />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular-nums",
+                  isActive
+                    ? "bg-violet-100 text-violet-700"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
     </div>
