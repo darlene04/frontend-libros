@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Home from "@/pages/Home";
 import AuthLayout from "@/layouts/AuthLayout";
 import AppLayout from "@/layouts/AppLayout";
 import ProtectedRoute from "@/layouts/ProtectedRoute";
@@ -13,6 +14,15 @@ function PlaceholderPage({ title }: { title: string }) {
     </div>
   );
 }
+
+const protectedAppRoutes = [
+  { path: "/explorar", element: <Home /> },
+  { path: "/mis-libros", element: <PlaceholderPage title="Mis libros" /> },
+  { path: "/intercambios", element: <PlaceholderPage title="Intercambios" /> },
+  { path: "/mensajes", element: <PlaceholderPage title="Mensajes" /> },
+  { path: "/perfil", element: <PlaceholderPage title="Perfil" /> },
+  { path: "/configuracion", element: <PlaceholderPage title="Configuración" /> },
+];
 
 export default function App() {
   return (
@@ -26,15 +36,12 @@ export default function App() {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* Protected — AppLayout + ProtectedRoute como doble wrapper */}
+      {/* ProtectedRoute -> AppLayout -> page */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
-          <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
-          <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
-          <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
-          <Route path="/perfil"        element={<PlaceholderPage title="Perfil" />} />
-          <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
+          {protectedAppRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
+          ))}
         </Route>
       </Route>
 
