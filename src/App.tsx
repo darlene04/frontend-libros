@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Library     from "@/pages/Library";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -41,6 +42,8 @@ export default function App() {
       {/* ProtectedRoute -> AppLayout -> page */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+
+          <Route path="/mi-biblioteca"  element={<Library />} />
           <Route path="/dashboard"     element={<Dashboard />} />
           <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
           <Route path="/marketplace"   element={<Marketplace />} />
@@ -52,6 +55,7 @@ export default function App() {
           {protectedAppRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
+
         </Route>
       </Route>
 
