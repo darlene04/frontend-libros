@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Marketplace from "@/pages/Marketplace";
 import Home from "@/pages/Home";
 import AuthLayout from "@/layouts/AuthLayout";
 import AppLayout from "@/layouts/AppLayout";
@@ -39,6 +40,13 @@ export default function App() {
       {/* ProtectedRoute -> AppLayout -> page */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+          <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
+          <Route path="/marketplace"   element={<Marketplace />} />
+          <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
+          <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
+          <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
+          <Route path="/perfil"        element={<PlaceholderPage title="Perfil" />} />
+          <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
           {protectedAppRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}

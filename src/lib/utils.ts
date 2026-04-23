@@ -81,13 +81,15 @@ export const CONDITION_COLORS: Record<BookCondition, string> = {
 
 //Book mode
 export const MODE_LABELS: Record<BookMode, string> = {
-  sell: "Venta",
+  sell:     "Venta",
   exchange: "Intercambio",
-  donate: "Donación",
+  donate:   "Donación",
+  loan:     "Préstamo",
 };
 
 export const MODE_COLORS: Record<BookMode, string> = {
-  sell: "bg-violet-100 text-violet-800",
+  sell:     "bg-violet-100 text-violet-800",
   exchange: "bg-blue-100 text-blue-800",
-  donate: "bg-green-100 text-green-800",
+  donate:   "bg-green-100 text-green-800",
+  loan:     "bg-orange-100 text-orange-800",
 };
