@@ -5,6 +5,9 @@ import {
   BookMarked,
   ArrowLeftRight,
   MessageCircle,
+  LayoutDashboard,
+  Store,
+  Library,
   User,
   Settings,
   LogOut,
@@ -21,10 +24,12 @@ import Avatar from "@/components/shared/Avatar";
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_MAIN = [
-  { label: "Explorar",     icon: Search,        href: "/explorar"     },
-  { label: "Mis libros",   icon: BookMarked,     href: "/mis-libros"   },
-  { label: "Intercambios", icon: ArrowLeftRight, href: "/intercambios" },
-  { label: "Mensajes",     icon: MessageCircle,  href: "/mensajes"     },
+  { label: "Dashboard",     icon: LayoutDashboard, href: "/dashboard"     },
+  { label: "Marketplace",   icon: Store,           href: "/marketplace"   },
+  { label: "Mi biblioteca", icon: Library,         href: "/mi-biblioteca" },
+  { label: "Explorar",      icon: Search,          href: "/explorar"      },
+  { label: "Intercambios",  icon: ArrowLeftRight,  href: "/intercambios"  },
+  { label: "Mensajes",      icon: MessageCircle,   href: "/mensajes"      },
 ];
 
 const NAV_BOTTOM = [

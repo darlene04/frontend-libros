@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Landing from "@/pages/Landing";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import AuthLayout from "@/layouts/AuthLayout";
-import AppLayout from "@/layouts/AppLayout";
+import Landing     from "@/pages/Landing";
+import Login       from "@/pages/Login";
+import Register    from "@/pages/Register";
+import Library     from "@/pages/Library";
+import AuthLayout    from "@/layouts/AuthLayout";
+import AppLayout     from "@/layouts/AppLayout";
 import ProtectedRoute from "@/layouts/ProtectedRoute";
 
 function PlaceholderPage({ title }: { title: string }) {
@@ -29,12 +30,15 @@ export default function App() {
       {/* Protected — AppLayout + ProtectedRoute como doble wrapper */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
-          <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
-          <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
-          <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
-          <Route path="/perfil"        element={<PlaceholderPage title="Perfil" />} />
-          <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
+          <Route path="/dashboard"      element={<PlaceholderPage title="Dashboard" />} />
+          <Route path="/marketplace"    element={<PlaceholderPage title="Marketplace"/>} />
+          <Route path="/mi-biblioteca"  element={<Library />} />
+          <Route path="/explorar"       element={<PlaceholderPage title="Explorar" />} />
+          <Route path="/mis-libros"     element={<PlaceholderPage title="Mis libros" />} />
+          <Route path="/intercambios"   element={<PlaceholderPage title="Intercambios" />} />
+          <Route path="/mensajes"       element={<PlaceholderPage title="Mensajes" />} />
+          <Route path="/perfil"         element={<PlaceholderPage title="Perfil" />} />
+          <Route path="/configuracion"  element={<PlaceholderPage title="Configuración" />} />
         </Route>
       </Route>
 
