@@ -10,9 +10,9 @@ export function cn(...inputs: ClassValue[]) {
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
-const priceFormatter = new Intl.NumberFormat("es-MX", {
+const priceFormatter = new Intl.NumberFormat("es-PE", {
   style: "currency",
-  currency: "MXN",
+  currency: "PEN",
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
@@ -21,7 +21,7 @@ export function formatPrice(amount: number): string {
   return priceFormatter.format(amount);
 }
 
-const dateFormatter = new Intl.DateTimeFormat("es-MX", {
+const dateFormatter = new Intl.DateTimeFormat("es-PE", {
   day: "numeric",
   month: "long",
   year: "numeric",
