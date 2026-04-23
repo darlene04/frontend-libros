@@ -101,7 +101,7 @@ export const BOOKS: Book[] = [
     condition: "good",
     mode: "exchange",
     ownerId: "u3",
-    location: "Cusco, Perú",
+    location: "Lima, Perú",
     createdAt: "2024-10-01",
     isFeatured: true,
   },

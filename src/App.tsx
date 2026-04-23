@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
 import Marketplace from "@/pages/Marketplace";
 import Home from "@/pages/Home";
 import AuthLayout from "@/layouts/AuthLayout";
@@ -40,6 +41,7 @@ export default function App() {
       {/* ProtectedRoute -> AppLayout -> page */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+          <Route path="/dashboard"     element={<Dashboard />} />
           <Route path="/explorar"      element={<PlaceholderPage title="Explorar" />} />
           <Route path="/marketplace"   element={<Marketplace />} />
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />

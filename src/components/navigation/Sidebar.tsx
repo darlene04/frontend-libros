@@ -5,6 +5,7 @@ import {
   BookMarked,
   ArrowLeftRight,
   MessageCircle,
+  LayoutDashboard,
   Store,
   User,
   Settings,
@@ -22,6 +23,7 @@ import Avatar from "@/components/shared/Avatar";
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_MAIN = [
+  { label: "Dashboard",    icon: LayoutDashboard, href: "/dashboard"    },
   { label: "Explorar",     icon: Search,        href: "/explorar"     },
   { label: "Marketplace",  icon: Store,         href: "/marketplace"  },
   { label: "Mis libros",   icon: BookMarked,     href: "/mis-libros"   },
