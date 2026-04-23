@@ -6,6 +6,7 @@ import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import Marketplace from "@/pages/Marketplace";
 import Home from "@/pages/Home";
+import Profile from "@/pages/Profile";
 import AuthLayout from "@/layouts/AuthLayout";
 import AppLayout from "@/layouts/AppLayout";
 import ProtectedRoute from "@/layouts/ProtectedRoute";
@@ -23,7 +24,6 @@ const protectedAppRoutes = [
   { path: "/mis-libros", element: <PlaceholderPage title="Mis libros" /> },
   { path: "/intercambios", element: <PlaceholderPage title="Intercambios" /> },
   { path: "/mensajes", element: <PlaceholderPage title="Mensajes" /> },
-  { path: "/perfil", element: <PlaceholderPage title="Perfil" /> },
   { path: "/configuracion", element: <PlaceholderPage title="Configuración" /> },
 ];
 
@@ -50,7 +50,8 @@ export default function App() {
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
           <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
           <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
-          <Route path="/perfil"        element={<PlaceholderPage title="Perfil" />} />
+          <Route path="/perfil"         element={<Profile />} />
+          <Route path="/perfil/:id"    element={<Profile />} />
           <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
           {protectedAppRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
