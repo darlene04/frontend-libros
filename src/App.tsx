@@ -6,6 +6,13 @@ import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import Marketplace from "@/pages/Marketplace";
 import Home from "@/pages/Home";
+import Profile     from "@/pages/Profile";
+import EditProfile from "@/pages/EditProfile";
+import Messages    from "@/pages/Messages";
+import AddBook     from "@/pages/AddBook";
+import BookDetail  from "@/pages/BookDetail";
+import Exchanges         from "@/pages/Exchanges";
+import PendingDeliveries from "@/pages/PendingDeliveries";
 import AuthLayout from "@/layouts/AuthLayout";
 import AppLayout from "@/layouts/AppLayout";
 import ProtectedRoute from "@/layouts/ProtectedRoute";
@@ -21,9 +28,8 @@ function PlaceholderPage({ title }: { title: string }) {
 const protectedAppRoutes = [
   { path: "/explorar", element: <Home /> },
   { path: "/mis-libros", element: <PlaceholderPage title="Mis libros" /> },
-  { path: "/intercambios", element: <PlaceholderPage title="Intercambios" /> },
+
   { path: "/mensajes", element: <PlaceholderPage title="Mensajes" /> },
-  { path: "/perfil", element: <PlaceholderPage title="Perfil" /> },
   { path: "/configuracion", element: <PlaceholderPage title="Configuración" /> },
 ];
 
@@ -48,10 +54,15 @@ export default function App() {
           <Route path="/explorar"      element={<Home />} />
           <Route path="/marketplace"   element={<Marketplace />} />
           <Route path="/mis-libros"    element={<PlaceholderPage title="Mis libros" />} />
-          <Route path="/intercambios"  element={<PlaceholderPage title="Intercambios" />} />
-          <Route path="/mensajes"      element={<PlaceholderPage title="Mensajes" />} />
-          <Route path="/perfil"        element={<PlaceholderPage title="Perfil" />} />
+          <Route path="/publicar"      element={<AddBook />} />
+          <Route path="/intercambios"        element={<Exchanges />} />
+          <Route path="/entregas-pendientes" element={<PendingDeliveries />} />
+          <Route path="/mensajes"      element={<Messages />} />
+          <Route path="/perfil"          element={<Profile />} />
+          <Route path="/perfil/editar" element={<EditProfile />} />
+          <Route path="/perfil/:id"    element={<Profile />} />
           <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
+          <Route path="/libro/:id"     element={<BookDetail />} />
           {protectedAppRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}

@@ -18,13 +18,15 @@ import {
   RefreshCw,
   SearchX,
 } from "lucide-react";
-import { BOOKS, GENRES, USERS } from "@/data/mock";
+import { getBooks } from "@/api/books";
+import { getUserById } from "@/api/users";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConditionBadge, ModeBadge } from "@/components/shared/Badge";
 import { Skeleton } from "@/components/shared/LoadingCard";
 import EmptyState from "@/components/shared/EmptyState";
 import Avatar from "@/components/shared/Avatar";
-import type { Book, BookCondition, BookMode } from "@/types";
+import type { Book, BookCondition, BookMode, User } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,27 +73,102 @@ const MODE_TABS: { value: ModeFilter; label: string; icon: React.ElementType }[]
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Marketplace() {
+  const token = useAuthStore((s) => s.token);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy]     = useState<SortOption>("recent");
   const [filters, setFilters]   = useState<FilterState>(EMPTY_FILTERS);
   const [sortOpen, setSortOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError]     = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [ownersById, setOwnersById] = useState<Record<string, User>>({});
   const sortRef                   = useRef<HTMLDivElement>(null);
 
-  // Simulates async fetch — swap for useQuery when backend is ready
   useEffect(() => {
-    setIsLoading(true);
-    setIsError(false);
-    const t = setTimeout(() => setIsLoading(false), 900);
-    return () => clearTimeout(t);
-  }, []);
+    if (!token) {
+      setIsLoading(false);
+      setIsError(true);
+      return;
+    }
+
+    let cancelled = false;
+    const authToken = token;
+
+    async function loadBooks() {
+      setIsLoading(true);
+      setIsError(false);
+
+      const response = await getBooks(authToken);
+
+      if (cancelled) return;
+
+      if (!response.ok) {
+        setIsError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      setBooks(response.data);
+
+      const ownerIds = [...new Set(response.data.map((book) => book.ownerId))];
+      const owners = await Promise.all(
+        ownerIds.map(async (ownerId) => {
+          const ownerResponse = await getUserById(ownerId, authToken);
+          return ownerResponse.ok ? ownerResponse.data : null;
+        })
+      );
+
+      if (cancelled) return;
+
+      setOwnersById(
+        Object.fromEntries(
+          owners
+            .filter((owner): owner is User => owner !== null)
+            .map((owner) => [owner.id, owner])
+        )
+      );
+      setIsLoading(false);
+    }
+
+    loadBooks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   function handleRetry() {
-    setIsError(false);
+    if (!token) {
+      setIsError(true);
+      return;
+    }
+    const retryToken = token;
     setIsLoading(true);
-    const t = setTimeout(() => setIsLoading(false), 900);
-    return () => clearTimeout(t);
+    setIsError(false);
+    getBooks(retryToken).then(async (response) => {
+      if (!response.ok) {
+        setIsError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      setBooks(response.data);
+      const ownerIds = [...new Set(response.data.map((book) => book.ownerId))];
+      const owners = await Promise.all(
+        ownerIds.map(async (ownerId) => {
+          const ownerResponse = await getUserById(ownerId, retryToken);
+          return ownerResponse.ok ? ownerResponse.data : null;
+        })
+      );
+      setOwnersById(
+        Object.fromEntries(
+          owners
+            .filter((owner): owner is User => owner !== null)
+            .map((owner) => [owner.id, owner])
+        )
+      );
+      setIsLoading(false);
+    });
   }
 
   const hasActiveFilters =
@@ -112,7 +189,7 @@ export default function Marketplace() {
   }, []);
 
   const filteredBooks = useMemo(() => {
-    let result = [...BOOKS];
+    let result = [...books];
 
     if (filters.query.trim()) {
       const q = filters.query.toLowerCase();
@@ -129,7 +206,12 @@ export default function Marketplace() {
     if (sortBy === "price-desc") result.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
 
     return result;
-  }, [filters, sortBy]);
+  }, [books, filters, sortBy]);
+
+  const genres = useMemo(
+    () => [...new Set(books.map((book) => book.genre).filter(Boolean))],
+    [books]
+  );
 
   function clearFilters() { setFilters(EMPTY_FILTERS); }
 
@@ -165,11 +247,11 @@ export default function Marketplace() {
             <h1 className="text-xl font-bold tracking-tight text-foreground leading-none">
               Market<span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">place</span>
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">{BOOKS.length} libros disponibles · compra, intercambia o dona</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{books.length} libros disponibles</p>
           </div>
         </div>
         <Link
-          to="/mis-libros/nuevo"
+          to="/publicar"
           className={cn(
             "inline-flex items-center gap-2 flex-shrink-0",
             "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2",
@@ -186,6 +268,7 @@ export default function Marketplace() {
       {/* ── Unified filter + search bar ───────────────────────────────────── */}
       <FilterBar
         filters={filters}
+        genres={genres}
         sortBy={sortBy}
         sortOpen={sortOpen}
         sortRef={sortRef}
@@ -261,7 +344,7 @@ export default function Marketplace() {
                     </button>
                   ) : (
                     <Link
-                      to="/mis-libros/nuevo"
+                      to="/publicar"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-sm shadow-violet-200 hover:from-violet-700 hover:to-purple-700 transition-all active:scale-95"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -273,11 +356,24 @@ export default function Marketplace() {
               />
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                {filteredBooks.map((book) => <BookCardGrid key={book.id} book={book} />)}
+                {filteredBooks.map((book) => (
+                  <BookCardGrid
+                    key={book.id}
+                    book={book}
+                    owner={ownersById[book.ownerId]}
+                  />
+                ))}
               </div>
             ) : (
               <div className="rounded-2xl border border-border bg-white overflow-hidden divide-y divide-border/60">
-                {filteredBooks.map((book, i) => <BookCardList key={book.id} book={book} index={i} />)}
+                {filteredBooks.map((book, i) => (
+                  <BookCardList
+                    key={book.id}
+                    book={book}
+                    owner={ownersById[book.ownerId]}
+                    index={i}
+                  />
+                ))}
               </div>
             )}
           </>
@@ -389,9 +485,10 @@ function ResultsError({ onRetry }: { onRetry: () => void }) {
 
 interface FilterBarProps {
   filters:           FilterState;
+  genres:            string[];
   sortBy:            SortOption;
   sortOpen:          boolean;
-  sortRef:           React.RefObject<HTMLDivElement>;
+  sortRef:           React.RefObject<HTMLDivElement | null>;
   viewMode:          ViewMode;
   currentSortLabel:  string;
   hasActiveFilters:  boolean;
@@ -406,7 +503,7 @@ interface FilterBarProps {
 }
 
 function FilterBar({
-  filters, sortBy, sortOpen, sortRef, viewMode, currentSortLabel,
+  filters, genres, sortBy, sortOpen, sortRef, viewMode, currentSortLabel,
   hasActiveFilters, onModeChange, onToggleCondition, onToggleGenre,
   onQueryChange, onSortOpen, onSortChange, onViewChange, onClear,
 }: FilterBarProps) {
@@ -425,8 +522,8 @@ function FilterBar({
   }, []);
 
   const filteredGenres = genreSearch.trim()
-    ? GENRES.filter((g) => g.toLowerCase().includes(genreSearch.toLowerCase()))
-    : GENRES;
+    ? genres.filter((g) => g.toLowerCase().includes(genreSearch.toLowerCase()))
+    : genres;
 
   function togglePanel(panel: "condition" | "genre") {
     setOpenPanel((p) => (p === panel ? null : panel));
@@ -686,7 +783,7 @@ function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }
 
 // ─── Book cards ───────────────────────────────────────────────────────────────
 
-function BookCardGrid({ book }: { book: Book }) {
+function BookCardGrid({ book, owner: _owner }: { book: Book; owner?: User }) {
   return (
     <Link
       to={`/libro/${book.id}`}
@@ -698,9 +795,11 @@ function BookCardGrid({ book }: { book: Book }) {
           alt={book.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
         />
-        <div className="absolute top-3 left-3">
-          <ModeBadge mode={book.mode} size="sm" />
-        </div>
+        {book.mode && (
+          <div className="absolute top-3 left-3">
+            <ModeBadge mode={book.mode} size="sm" />
+          </div>
+        )}
         <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4 space-y-2">
           <div>
@@ -712,7 +811,9 @@ function BookCardGrid({ book }: { book: Book }) {
             {book.price != null ? (
               <span className="text-white font-bold text-sm drop-shadow">S/ {book.price}</span>
             ) : (
-              <span className="text-[11px] font-semibold text-white/90 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">Gratis</span>
+              <span className="text-[11px] font-semibold text-white/90 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                {book.mode ? "Gratis" : ""}
+              </span>
             )}
           </div>
         </div>
@@ -721,8 +822,15 @@ function BookCardGrid({ book }: { book: Book }) {
   );
 }
 
-function BookCardList({ book, index }: { book: Book; index: number }) {
-  const owner = USERS.find((u) => u.id === book.ownerId);
+function BookCardList({
+  book,
+  owner,
+  index,
+}: {
+  book: Book;
+  owner?: User;
+  index: number;
+}) {
   return (
     <Link
       to={`/libro/${book.id}`}

@@ -33,6 +33,7 @@ import {
 } from "recharts";
 import { useAuthStore } from "@/store/useAuthStore";
 import { BOOKS, TRANSACTIONS, REVIEWS, STATS_DATA, USERS } from "@/data/mock";
+import type { User } from "@/types";
 import { cn, formatPrice, formatRelativeTime } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 import StarRating from "@/components/shared/StarRating";
@@ -208,7 +209,7 @@ function RecentTransactions() {
     const book         = BOOKS.find((b) => b.id === t.bookId);
     const counterparty = USERS.find((u) => u.id === t.sellerId) ?? USERS.find((u) => u.id === t.buyerId);
     const status       = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.pending;
-    const mode         = MODE_CONFIG[t.mode]   ?? MODE_CONFIG.sell;
+    const mode         = (t.mode && t.mode in MODE_CONFIG ? MODE_CONFIG[t.mode as keyof typeof MODE_CONFIG] : undefined) ?? MODE_CONFIG.sell;
     return { t, book, counterparty, status, mode };
   });
 
@@ -374,7 +375,7 @@ function RecentTransactions() {
 // ─── Profile card ────────────────────────────────────────────────────────────
 
 interface ProfileCardProps {
-  user: ReturnType<typeof useAuthStore>["user"];
+  user: User | null;
   kpis: { rating: number; reviewCount: number; booksPosted: number };
 }
 

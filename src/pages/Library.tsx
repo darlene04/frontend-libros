@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Library, BookMarked, Eye, Bookmark, TrendingUp,
-  Tag, Repeat2, BookLock, Edit2, MapPin, Gift,
+  Tag, Repeat2, BookLock, Edit2, MapPin, Gift, Trash2, EyeOff,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { BOOKS, TRANSACTIONS } from "@/data/mock";
-import type { Book } from "@/types";
+import { deleteBook, getBooksByOwner, updateBook, updateBookAvailability } from "@/api/books";
+import { getTransactionsByUser } from "@/api/transactions";
+import type { Book, Transaction } from "@/types";
 import {
   cn,
   CONDITION_LABELS,
@@ -18,18 +19,6 @@ import {
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 type LibraryTab = "all" | "sell" | "exchange" | "reserved";
-
-const TABS: {
-  value:   LibraryTab;
-  label:   string;
-  icon:    React.ElementType;
-  count:   number;
-}[] = [
-  { value: "all",      label: "Todos",       icon: BookMarked, count: 9 },
-  { value: "sell",     label: "Venta",       icon: Tag,        count: 5 },
-  { value: "exchange", label: "Intercambio", icon: Repeat2,    count: 3 },
-  { value: "reserved", label: "Reservado",   icon: BookLock,   count: 1 },
-];
 
 // ─── Mode icon map ────────────────────────────────────────────────────────────
 
@@ -50,26 +39,70 @@ const MOCK_SAVED_TREND = 12;
 
 export default function LibraryPage() {
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const [activeTab, setActiveTab] = useState<LibraryTab>("all");
+  const [books, setBooks] = useState<Book[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [busyBookId, setBusyBookId] = useState<string | null>(null);
 
-  const published = useMemo(
-    () => user?.booksPosted ?? BOOKS.filter((b) => b.ownerId === user?.id).length,
-    [user]
-  );
+  useEffect(() => {
+    if (!user?.id || !token) return;
+
+    let cancelled = false;
+    const userId = user.id;
+    const authToken = token;
+
+    async function loadLibraryData() {
+      const [booksResponse, transactionsResponse] = await Promise.all([
+        getBooksByOwner(userId, authToken),
+        getTransactionsByUser(userId, authToken),
+      ]);
+
+      if (cancelled) return;
+
+      if (booksResponse.ok) {
+        setBooks(booksResponse.data);
+      }
+
+      if (transactionsResponse.ok) {
+        setTransactions(transactionsResponse.data);
+      }
+    }
+
+    loadLibraryData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user?.id]);
+
+  const published = books.length;
 
   const reservedBookIds = useMemo(
-    () => new Set(TRANSACTIONS.filter((t) => t.status === "pending").map((t) => t.bookId)),
-    []
+    () =>
+      new Set(
+        transactions
+          .filter((transaction) => transaction.sellerId === user?.id)
+          .map((transaction) => transaction.bookId)
+      ),
+    [transactions, user?.id]
   );
 
   const filteredBooks = useMemo(() => {
     switch (activeTab) {
-      case "sell":     return BOOKS.filter((b) => b.mode === "sell");
-      case "exchange": return BOOKS.filter((b) => b.mode === "exchange");
-      case "reserved": return BOOKS.filter((b) => reservedBookIds.has(b.id));
-      default:         return BOOKS;
+      case "sell":     return books.filter((b) => b.mode === "sell");
+      case "exchange": return books.filter((b) => b.mode === "exchange");
+      case "reserved": return books.filter((b) => reservedBookIds.has(b.id));
+      default:         return books;
     }
-  }, [activeTab, reservedBookIds]);
+  }, [activeTab, books, reservedBookIds]);
+
+  const tabs = [
+    { value: "all" as const, label: "Todos", icon: BookMarked, count: books.length },
+    { value: "sell" as const, label: "Venta", icon: Tag, count: books.filter((b) => b.mode === "sell").length },
+    { value: "exchange" as const, label: "Intercambio", icon: Repeat2, count: books.filter((b) => b.mode === "exchange").length },
+    { value: "reserved" as const, label: "Transado", icon: BookLock, count: books.filter((b) => reservedBookIds.has(b.id)).length },
+  ];
 
   const stats = [
     {
@@ -97,6 +130,87 @@ export default function LibraryPage() {
       footnote: "por otros lectores",
     },
   ];
+
+  async function handleEditBook(book: Book) {
+    if (!token) return;
+
+    const title = window.prompt("Nuevo titulo", book.title);
+    if (title === null) return;
+
+    const author = window.prompt("Nuevo autor", book.author);
+    if (author === null) return;
+
+    const description = window.prompt("Nueva descripcion", book.description);
+    if (description === null) return;
+
+    const nextPriceValue = window.prompt(
+      "Nuevo precio. Dejalo vacio para quitarlo",
+      book.price != null ? String(book.price) : ""
+    );
+    if (nextPriceValue === null) return;
+
+    const nextPrice =
+      nextPriceValue.trim() === "" ? undefined : Number(nextPriceValue.trim());
+
+    setBusyBookId(book.id);
+    const response = await updateBook(
+      book.id,
+      {
+        title: title.trim(),
+        author: author.trim(),
+        description: description.trim(),
+        price: Number.isNaN(nextPrice as number) ? book.price : nextPrice,
+      },
+      token
+    );
+    setBusyBookId(null);
+
+    if (!response.ok) {
+      window.alert(response.error || "No se pudo editar el libro");
+      return;
+    }
+
+    setBooks((current) =>
+      current.map((item) => (item.id === book.id ? response.data : item))
+    );
+  }
+
+  async function handleToggleAvailability(book: Book) {
+    if (!token) return;
+
+    setBusyBookId(book.id);
+    const response = await updateBookAvailability(
+      book.id,
+      !(book.available ?? true),
+      token
+    );
+    setBusyBookId(null);
+
+    if (!response.ok) {
+      window.alert(response.error || "No se pudo actualizar la disponibilidad");
+      return;
+    }
+
+    setBooks((current) =>
+      current.map((item) => (item.id === book.id ? response.data : item))
+    );
+  }
+
+  async function handleDeleteBook(book: Book) {
+    if (!token) return;
+    if (!window.confirm(`Eliminar "${book.title}"?`)) return;
+
+    setBusyBookId(book.id);
+    const response = await deleteBook(book.id, token);
+    setBusyBookId(null);
+
+    if (!response.ok) {
+      window.alert(response.error || "No se pudo eliminar el libro");
+      return;
+    }
+
+    setBooks((current) => current.filter((item) => item.id !== book.id));
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -128,7 +242,7 @@ export default function LibraryPage() {
 
       {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <div className="bg-muted/50 border border-border rounded-2xl p-1 flex gap-0.5">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.value;
           const Icon = tab.icon;
           return (
@@ -165,7 +279,11 @@ export default function LibraryPage() {
           <LibraryBookCard
             key={book.id}
             book={book}
+            isBusy={busyBookId === book.id}
             isReserved={reservedBookIds.has(book.id)}
+            onDelete={() => handleDeleteBook(book)}
+            onEdit={() => handleEditBook(book)}
+            onToggleAvailability={() => handleToggleAvailability(book)}
           />
         ))}
       </div>
@@ -178,10 +296,21 @@ export default function LibraryPage() {
 
 interface LibraryBookCardProps {
   book:       Book;
+  isBusy: boolean;
   isReserved: boolean;
+  onDelete: () => void;
+  onEdit: () => void;
+  onToggleAvailability: () => void;
 }
 
-function LibraryBookCard({ book, isReserved }: LibraryBookCardProps) {
+function LibraryBookCard({
+  book,
+  isBusy,
+  isReserved,
+  onDelete,
+  onEdit,
+  onToggleAvailability,
+}: LibraryBookCardProps) {
   const ModeIcon = MODE_ICONS[book.mode] ?? Tag;
 
   return (
@@ -207,7 +336,10 @@ function LibraryBookCard({ book, isReserved }: LibraryBookCardProps) {
           </button>
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/95 text-white text-xs font-semibold shadow hover:bg-violet-700 transition-colors"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
           >
             <Edit2 className="w-3 h-3" />
             Editar
@@ -218,7 +350,7 @@ function LibraryBookCard({ book, isReserved }: LibraryBookCardProps) {
         {isReserved && (
           <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-none">
             <span className="bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
-              Reservado
+              Transado
             </span>
           </div>
         )}
@@ -268,6 +400,27 @@ function LibraryBookCard({ book, isReserved }: LibraryBookCardProps) {
             <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
             <span className="truncate">{book.location.split(",")[0]}</span>
           </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={onToggleAvailability}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border px-2 py-2 text-[11px] font-semibold text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+          >
+            <EyeOff className="w-3 h-3" />
+            {book.available === false ? "Activar" : "Ocultar"}
+          </button>
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={onDelete}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 px-2 py-2 text-[11px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 className="w-3 h-3" />
+            Eliminar
+          </button>
         </div>
       </div>
     </div>

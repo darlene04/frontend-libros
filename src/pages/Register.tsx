@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { GENRES } from "@/data/mock";
+import { loginUser, registerUser } from "@/api/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,6 +109,7 @@ export default function Register() {
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   function update(patch: Partial<FormData>) {
     setData((prev) => ({ ...prev, ...patch }));
@@ -115,6 +117,7 @@ export default function Register() {
 
   function handleNext(e: FormEvent) {
     e.preventDefault();
+    setSubmitError(null);
     if (step === 1) {
       const errs = validateStep1(data);
       if (Object.keys(errs).length > 0) { setErrors1(errs); return; }
@@ -129,13 +132,34 @@ export default function Register() {
   }
 
   async function handleSubmit(skip = false) {
-    if (skip) {
-      update({ genres: [] });
-    }
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 900));
-    login();
-    navigate("/explorar", { replace: true });
+    setSubmitError(null);
+
+    try {
+      if (skip) {
+        update({ genres: [] });
+      }
+
+      await registerUser({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        password: data.password,
+      });
+
+      const auth = await loginUser({
+        email: data.email.trim(),
+        password: data.password,
+      });
+
+      login(auth);
+      navigate("/explorar", { replace: true });
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "No se pudo crear la cuenta"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const strength = getStrength(data.password);
@@ -153,6 +177,7 @@ export default function Register() {
             key={step}
             className="animate-in fade-in slide-in-from-right-4 duration-200 px-8 py-6"
           >
+            {submitError && <FieldError message={submitError} />}
             {step === 1 && (
               <Step1
                 data={data}

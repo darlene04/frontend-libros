@@ -1,8 +1,8 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type BookCondition = "new" | "like-new" | "good" | "acceptable" | "poor";
+export type BookCondition = "" | "new" | "like-new" | "good" | "acceptable" | "poor";
 
-export type BookMode = "sell" | "exchange" | "donate" | "loan";
+export type BookMode = "" | "sell" | "exchange" | "donate" | "loan";
 
 export type TransactionStatus =
   | "pending"
@@ -23,6 +23,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  zoneId?: number | null;
   avatar: string;
   location: string;
   bio: string;
@@ -40,15 +41,24 @@ export interface Book {
   cover: string;
   description: string;
   genre: string;
-  year: number;
+  year?: number;
   language: string;
   condition: BookCondition;
   mode: BookMode;
   price?: number;
+  available?: boolean;
   ownerId: string;
   location: string;
   createdAt: string;
   isFeatured?: boolean;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  active?: boolean;
 }
 
 export interface Transaction {
@@ -73,6 +83,8 @@ export interface Message {
   read: boolean;
 }
 
+export type SolicitudStatus = "pendiente" | "aceptada" | "rechazada" | "cancelada" | "completada";
+
 export interface Conversation {
   id: string;
   participantIds: [string, string];
@@ -81,6 +93,9 @@ export interface Conversation {
   lastMessageAt: string;
   unreadCount: number;
   messages: Message[];
+  status?: SolicitudStatus;
+  buyerId?: string;
+  sellerId?: string;
 }
 
 export interface Notification {

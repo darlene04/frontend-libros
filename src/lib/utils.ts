@@ -64,6 +64,7 @@ export function truncate(text: string, maxLength: number): string {
 
 //Book condition
 export const CONDITION_LABELS: Record<BookCondition, string> = {
+  "": "",
   new: "Nuevo",
   "like-new": "Como nuevo",
   good: "Bueno",
@@ -72,6 +73,7 @@ export const CONDITION_LABELS: Record<BookCondition, string> = {
 };
 
 export const CONDITION_COLORS: Record<BookCondition, string> = {
+  "": "",
   new: "bg-emerald-100 text-emerald-800",
   "like-new": "bg-teal-100 text-teal-800",
   good: "bg-sky-100 text-sky-800",
@@ -81,6 +83,7 @@ export const CONDITION_COLORS: Record<BookCondition, string> = {
 
 //Book mode
 export const MODE_LABELS: Record<BookMode, string> = {
+  "": "",
   sell:     "Venta",
   exchange: "Intercambio",
   donate:   "Donación",
@@ -88,6 +91,7 @@ export const MODE_LABELS: Record<BookMode, string> = {
 };
 
 export const MODE_COLORS: Record<BookMode, string> = {
+  "": "",
   sell:     "bg-violet-100 text-violet-800",
   exchange: "bg-blue-100 text-blue-800",
   donate:   "bg-green-100 text-green-800",

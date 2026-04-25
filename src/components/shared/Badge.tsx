@@ -48,6 +48,8 @@ interface ConditionBadgeProps {
 }
 
 export function ConditionBadge({ condition, size = "md", className }: ConditionBadgeProps) {
+  if (!condition || !CONDITION_LABELS[condition]) return null;
+
   return (
     <span
       className={cn(
@@ -69,6 +71,8 @@ interface ModeBadgeProps {
 }
 
 export function ModeBadge({ mode, size = "md", className }: ModeBadgeProps) {
+  if (!mode || !MODE_LABELS[mode]) return null;
+
   return (
     <span
       className={cn(

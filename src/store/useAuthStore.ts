@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/types";
-import { CURRENT_USER } from "@/data/mock";
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
-  login: (user?: User) => void;
+  login: (payload: { user: User; token: string }) => void;
   setUser: (user: User) => void;
   logout: () => void;
 }
@@ -31,21 +31,23 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
 
-      login: (user = CURRENT_USER) =>
-        set({ user: normalizeUser(user), isAuthenticated: true }),
+      login: ({ user, token }) =>
+        set({ user: normalizeUser(user), token, isAuthenticated: true }),
 
       setUser: (user) =>
         set({ user: normalizeUser(user), isAuthenticated: true }),
 
       logout: () =>
-        set({ user: null, isAuthenticated: false }),
+        set({ user: null, token: null, isAuthenticated: false }),
     }),
     {
       name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
       merge: (persistedState, currentState) => {
@@ -55,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
           ...currentState,
           ...typedState,
           user: normalizeUser(typedState?.user ?? currentState.user),
+          token: typedState?.token ?? currentState.token,
         };
       },
     }

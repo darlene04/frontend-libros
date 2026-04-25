@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -16,63 +16,35 @@ import {
   Star,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
-import {
-  BOOKS,
-  TRANSACTIONS,
-  MY_BOOKS,
-  STATS_DATA,
-  USERS,
-} from "@/data/mock";
+import { getBooks } from "@/api/books";
+import { getTransactionsByUser } from "@/api/transactions";
+import { getUserById } from "@/api/users";
 import { cn } from "@/lib/utils";
 import { BookGrid, BookListItem } from "@/components/books";
 import StarRating from "@/components/shared/StarRating";
-
-const ALL_BOOKS_SORTED = [...BOOKS].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-const FEATURED_BOOKS   = BOOKS.filter((b) => b.isFeatured);
-const RECENT_BOOKS     = ALL_BOOKS_SORTED.slice(0, 8);
-const SHOWCASE_BOOKS   = [
-  ...FEATURED_BOOKS,
-  ...BOOKS.filter((b) => !b.isFeatured),
-].slice(0, 6);
-const BOOK_OWNERS = Object.fromEntries(
-  USERS.map((user) => [
-    user.id,
-    {
-      id: user.id,
-      name: user.name,
-      avatar: user.avatar,
-      location: user.location,
-      rating: user.rating,
-      profileHref: "/perfil",
-    },
-  ])
-);
-
-const FILTER_GENRES = [
-  "Todos",
-  "Ficción",
-  "Ciencia ficción",
-  "Fantasía",
-  "Historia",
-  "Autoayuda",
-  "Infantil",
-  "Romance",
-  "Terror",
-  "Biografía",
-];
-const PENDING_COUNT    = TRANSACTIONS.filter((t) => t.status === "pending").length;
-const MONTHLY_REVENUE  = STATS_DATA[STATS_DATA.length - 1].revenue;
-const MONTHLY_LABEL    = new Intl.DateTimeFormat("es-PE", { month: "long" }).format(new Date());
-const PREV_REVENUE     = STATS_DATA[STATS_DATA.length - 2].revenue;
-const REVENUE_DELTA    = Math.round(((MONTHLY_REVENUE - PREV_REVENUE) / PREV_REVENUE) * 100);
+import type { Book, Transaction } from "@/types";
 
 type User = import("@/types").User;
 
-const getKPIs = (user: User | null) => [
+const getKPIs = (user: User | null, books: Book[], transactions: Transaction[]) => {
+  const myTransactions = transactions.filter(
+    (transaction) =>
+      transaction.buyerId === user?.id || transaction.sellerId === user?.id
+  );
+  const mySales = myTransactions.filter(
+    (transaction) =>
+      transaction.sellerId === user?.id && transaction.mode === "sell"
+  );
+  const revenue = mySales.reduce(
+    (total, transaction) => total + (transaction.agreedPrice ?? 0),
+    0
+  );
+
+  return [
   {
     label:     "Libros listados",
-    value:     MY_BOOKS.length.toString(),
-    sub:       `de ${BOOKS.length} en plataforma`,
+    value:     books.filter((book) => book.ownerId === user?.id).length.toString(),
+    sub:       `de ${books.length} en plataforma`,
     icon:      BookMarked,
     iconBg:    "bg-violet-100",
     iconColor: "text-violet-700",
@@ -82,27 +54,27 @@ const getKPIs = (user: User | null) => [
     href:      "/mis-libros",
   },
   {
-    label:     "Intercambios activos",
-    value:     PENDING_COUNT.toString(),
-    sub:       PENDING_COUNT === 1 ? "solicitud pendiente" : "solicitudes pendientes",
+    label:     "Transacciones",
+    value:     myTransactions.length.toString(),
+    sub:       myTransactions.length === 1 ? "registro completado" : "registros completados",
     icon:      ArrowLeftRight,
     iconBg:    "bg-blue-100",
     iconColor: "text-blue-700",
     cardBg:    "bg-gradient-to-br from-white to-blue-50/60",
-    trend:     "Ver solicitudes",
+    trend:     "Ver historial",
     trendUp:   false,
     href:      "/intercambios",
   },
   {
-    label:     "Ventas del mes",
-    value:     `S/ ${MONTHLY_REVENUE}`,
-    sub:       `S/ · ${MONTHLY_LABEL}`,
+    label:     "Ventas registradas",
+    value:     `S/ ${revenue}`,
+    sub:       mySales.length === 1 ? "1 venta detectada" : `${mySales.length} ventas detectadas`,
     icon:      TrendingUp,
     iconBg:    "bg-emerald-100",
     iconColor: "text-emerald-700",
     cardBg:    "bg-gradient-to-br from-white to-emerald-50/60",
-    trend:     `+${REVENUE_DELTA}% vs mes anterior`,
-    trendUp:   REVENUE_DELTA > 0,
+    trend:     "Desde transactions",
+    trendUp:   revenue > 0,
     href:      undefined,
   },
   {
@@ -119,6 +91,7 @@ const getKPIs = (user: User | null) => [
     rating:    user?.rating,
   },
 ];
+};
 
 // Greeting
 function getGreeting() {
@@ -149,21 +122,100 @@ function getGreeting() {
 
 export default function Home() {
   const user      = useAuthStore((s) => s.user);
+  const token     = useAuthStore((s) => s.token);
   const firstName = user?.name.split(" ")[0] ?? "Lector";
-  const kpis      = getKPIs(user);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [ownersById, setOwnersById] = useState<Record<string, User>>({});
+  const kpis      = getKPIs(user, books, transactions);
 
   const greeting = getGreeting();
   const GreetIcon = greeting.icon;
 
   const [selectedGenre, setSelectedGenre] = useState("Todos");
 
+  useEffect(() => {
+    if (!token || !user?.id) return;
+
+    let cancelled = false;
+    const authToken = token;
+    const userId = user.id;
+
+    async function loadHomeData() {
+      const [booksResponse, transactionsResponse] = await Promise.all([
+        getBooks(authToken),
+        getTransactionsByUser(userId, authToken),
+      ]);
+
+      if (!booksResponse.ok || cancelled) return;
+
+      setBooks(booksResponse.data);
+      if (transactionsResponse.ok) {
+        setTransactions(transactionsResponse.data);
+      }
+
+      const ownerIds = [...new Set(booksResponse.data.map((book) => book.ownerId))];
+      const owners = await Promise.all(
+        ownerIds.map(async (ownerId) => {
+          const ownerResponse = await getUserById(ownerId, authToken);
+          return ownerResponse.ok ? ownerResponse.data : null;
+        })
+      );
+
+      if (cancelled) return;
+
+      setOwnersById(
+        Object.fromEntries(
+          owners
+            .filter((owner): owner is User => owner !== null)
+            .map((owner) => [
+              owner.id,
+              {
+                ...owner,
+                profileHref: "/perfil",
+              },
+            ])
+        )
+      );
+    }
+
+    loadHomeData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user?.id]);
+
+  const allBooksSorted = useMemo(
+    () =>
+      [...books].sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      }),
+    [books]
+  );
+  const featuredBooks = useMemo(
+    () => books.filter((b) => b.isFeatured),
+    [books]
+  );
+  const recentBooks = useMemo(() => allBooksSorted.slice(0, 8), [allBooksSorted]);
+  const showcaseBooks = useMemo(
+    () => [...featuredBooks, ...books.filter((b) => !b.isFeatured)].slice(0, 6),
+    [books, featuredBooks]
+  );
+  const filterGenres = useMemo(
+    () => ["Todos", ...new Set(books.map((book) => book.genre).filter(Boolean))],
+    [books]
+  );
+
   const filteredBooks = selectedGenre === "Todos"
-    ? SHOWCASE_BOOKS
-    : BOOKS.filter((b) => b.genre === selectedGenre);
+    ? showcaseBooks
+    : books.filter((b) => b.genre === selectedGenre);
 
   const filteredRecent = selectedGenre === "Todos"
-    ? RECENT_BOOKS
-    : ALL_BOOKS_SORTED.filter((b) => b.genre === selectedGenre).slice(0, 8);
+    ? recentBooks
+    : allBooksSorted.filter((b) => b.genre === selectedGenre).slice(0, 8);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-6 lg:space-y-10">
@@ -220,11 +272,11 @@ export default function Home() {
               )}
               <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-white/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur-sm">
                 <BookOpen className="w-3 h-3 flex-shrink-0" />
-                {BOOKS.length} libros disponibles
+                  {books.length} libros disponibles
               </span>
 
               <Link
-                to="/mis-libros/nuevo"
+                to="/publicar"
                 className={cn(
                   "inline-flex items-center gap-1.5",
                   "rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2",
@@ -249,7 +301,7 @@ export default function Home() {
                   Actividad
                 </p>
                 <p className="text-2xl font-bold tracking-tight text-foreground">
-                  {BOOKS.length} libros
+                  {books.length} libros
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Descubre títulos nuevos, coordina intercambios y mantiene tu biblioteca en movimiento.
@@ -290,7 +342,7 @@ export default function Home() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-          {FILTER_GENRES.map((genre) => (
+          {filterGenres.map((genre) => (
             <GenrePill
               key={genre}
               label={genre}
@@ -317,7 +369,7 @@ export default function Home() {
         {filteredBooks.length > 0 ? (
           <BookGrid
             books={filteredBooks}
-            ownersById={BOOK_OWNERS}
+            ownersById={ownersById}
             columns={3}
             className="grid-cols-2 sm:grid-cols-3 xl:grid-cols-3"
           />
@@ -360,7 +412,7 @@ export default function Home() {
                     <BookListItem
                       key={book.id}
                       book={book}
-                      owner={BOOK_OWNERS[book.ownerId]}
+                      owner={ownersById[book.ownerId]}
                       index={ci * Math.ceil(filteredRecent.length / 2) + i}
                       className="rounded-none border-0 bg-transparent p-4 shadow-none hover:bg-violet-50/40"
                     />
@@ -537,7 +589,7 @@ function CTABanner({ userName }: { userName: string }) {
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
           <StarRating value={4.8} showValue size="sm" className="text-white/80" />
           <Link
-            to="/mis-libros/nuevo"
+            to="/publicar"
             className={cn(
               "inline-flex items-center gap-2 rounded-xl px-5 py-2.5",
               "bg-white text-violet-700 font-semibold text-sm",

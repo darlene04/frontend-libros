@@ -2,7 +2,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Search,
-  BookMarked,
   ArrowLeftRight,
   MessageCircle,
   LayoutDashboard,
@@ -15,6 +14,7 @@ import {
   ChevronRight,
   X,
   Plus,
+  Truck,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -28,8 +28,9 @@ const NAV_MAIN = [
   { label: "Marketplace",   icon: Store,           href: "/marketplace"   },
   { label: "Mi biblioteca", icon: Library,         href: "/mi-biblioteca" },
   { label: "Explorar",      icon: Search,          href: "/explorar"      },
-  { label: "Intercambios",  icon: ArrowLeftRight,  href: "/intercambios"  },
-  { label: "Mensajes",      icon: MessageCircle,   href: "/mensajes"      },
+  { label: "Intercambios",  icon: ArrowLeftRight,  href: "/intercambios"        },
+  { label: "Mensajes",      icon: MessageCircle,   href: "/mensajes"            },
+  { label: "Entregas",      icon: Truck,           href: "/entregas-pendientes" },
 ];
 
 const NAV_BOTTOM = [
@@ -119,7 +120,7 @@ export default function Sidebar() {
       <div className={cn("flex-shrink-0 pt-4 pb-1", sidebarCollapsed ? "px-2" : "px-3")}>
         <SidebarTooltip label="Publicar libro" disabled={!sidebarCollapsed}>
           <NavLink
-            to="/mis-libros/nuevo"
+            to="/publicar"
             onClick={closeOnMobile}
             className={cn(
               "flex items-center gap-2.5 rounded-xl font-semibold text-sm text-white",

@@ -2,12 +2,14 @@ import { type FormEvent, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { loginUser } from "@/api/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FormErrors {
   email?: string;
   password?: string;
+  general?: string;
 }
 
 type LocationState = { from?: { pathname: string } } | null;
@@ -90,17 +92,27 @@ export default function Login() {
     }
     setErrors({});
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    login();
-    navigate(from, { replace: true });
+    try {
+      const auth = await loginUser({
+        email: email.trim(),
+        password,
+      });
+      login(auth);
+      navigate(from, { replace: true });
+    } catch (error) {
+      setErrors({
+        general:
+          error instanceof Error ? error.message : "No se pudo iniciar sesión",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleSocialLogin(_provider: "google" | "apple") {
-    setIsLoading(true);
-    setTimeout(() => {
-      login();
-      navigate(from, { replace: true });
-    }, 700);
+    setErrors({
+      general: "El login social todavía no está conectado al backend.",
+    });
   }
 
   return (
@@ -118,6 +130,8 @@ export default function Login() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {errors.general && <FieldError message={errors.general} />}
+
             {/* Email */}
             <div className="space-y-1.5">
               <label
